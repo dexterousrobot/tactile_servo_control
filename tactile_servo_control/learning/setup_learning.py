@@ -3,7 +3,7 @@ import os
 from tactile_learning.utils.utils_learning import save_json_obj
 
 
-def setup_learning(save_dir):
+def setup_learning(save_dir=None):
 
     # Parameters
     learning_params = {
@@ -33,9 +33,10 @@ def setup_learning(save_dir):
         'noise_var': None,
     }
 
-    save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
-    save_json_obj(image_processing_params, os.path.join(save_dir, 'image_processing_params'))
-    save_json_obj(augmentation_params, os.path.join(save_dir, 'augmentation_params'))
+    if save_dir:
+        save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
+        save_json_obj(image_processing_params, os.path.join(save_dir, 'image_processing_params'))
+        save_json_obj(augmentation_params, os.path.join(save_dir, 'augmentation_params'))
 
     return learning_params, image_processing_params, augmentation_params
 
