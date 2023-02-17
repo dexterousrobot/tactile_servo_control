@@ -1,25 +1,18 @@
-"""
-python train_model.py -t surface_3d
-python train_model.py -t edge_2d
-python train_model.py -t edge_3d
-python train_model.py -t edge_5d
-python train_model.py -t surface_3d edge_2d edge_3d edge_5d
-"""
 import os
-import argparse
 import shutil
 
+from tactile_servo_control.learning.setup_learning import parse_args
 from tactile_servo_control.learning.setup_learning import setup_model
 from tactile_servo_control.learning.setup_learning import setup_learning
 from tactile_servo_control.learning.setup_learning import setup_task
 
 from tactile_learning.supervised.models import create_model
 from tactile_learning.utils.utils_learning import seed_everything, make_dir
+from tactile_learning.supervised.image_generator import ImageDataGenerator
+from tactile_learning.supervised.train_model_w_metrics import train_model_w_metrics
 
-from tactile_servo_control.learning.train_model import train_model
 from tactile_servo_control.learning.evaluate_model import evaluate_model
 from tactile_servo_control.learning.utils_plots import ErrorPlotter
-
 from tactile_servo_control.learning.utils_learning import PoseEncoder
 from tactile_servo_control.learning.utils_learning import get_pose_limits
 from tactile_servo_control.learning.utils_learning import csv_row_to_label
@@ -30,28 +23,8 @@ from tactile_servo_control import BASE_MODEL_PATH
 
 def launch():
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-t', '--tasks',
-        nargs='+',
-        help="Choose task from ['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d'].",
-        default=['edge_2d']
-    )
-    parser.add_argument(
-        '-m', '--models',
-        nargs='+',
-        help="Choose model from ['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit'].",
-        default=['simple_cnn']
-    )
-    parser.add_argument(
-        '-d', '--device',
-        type=str,
-        help="Choose device from ['cpu', 'cuda'].",
-        default='cuda'
-    )
-
     # parse arguments
-    args = parser.parse_args()
+    args = parse_args()
     tasks = args.tasks
     models = args.models
     device = args.device
@@ -67,7 +40,7 @@ def launch():
             make_dir(save_dir)
 
             # setup parameters
-            network_params = setup_model(model_type, save_dir)
+            model_params = setup_model(model_type, save_dir)
             learning_params, image_processing_params, augmentation_params = setup_learning(save_dir)
 
             # keep record of sensor params
@@ -76,9 +49,10 @@ def launch():
             # create the model
             seed_everything(learning_params['seed'])
             model = create_model(
-                image_processing_params['dims'],
-                out_dim,
-                network_params,
+                in_dim=image_processing_params['dims'],
+                in_channels=1,
+                out_dim=out_dim,
+                model_params=model_params,
                 device=device
             )
 
@@ -92,6 +66,18 @@ def launch():
                 os.path.join(BASE_DATA_PATH, task, 'val')
             ]
 
+            # set generators and loaders
+            train_generator = ImageDataGenerator(
+                data_dirs=train_data_dirs,
+                csv_row_to_label=csv_row_to_label,
+                **{**image_processing_params, **augmentation_params}
+            )
+            val_generator = ImageDataGenerator(
+                data_dirs=val_data_dirs,
+                csv_row_to_label=csv_row_to_label,
+                **image_processing_params
+            )
+
             # create the encoder/decoder for labels
             label_encoder = PoseEncoder(label_names, pose_limits, device)
 
@@ -103,15 +89,12 @@ def launch():
                 plot_during_training=False
             )
 
-            train_model(
+            train_model_w_metrics(
                 model,
                 label_encoder,
-                train_data_dirs,
-                val_data_dirs,
-                csv_row_to_label,
+                train_generator,
+                val_generator,
                 learning_params,
-                image_processing_params,
-                augmentation_params,
                 save_dir,
                 error_plotter=error_plotter,
                 calculate_train_metrics=False,
@@ -123,9 +106,8 @@ def launch():
                 task,
                 model,
                 label_encoder,
-                val_data_dirs,
+                val_generator,
                 learning_params,
-                image_processing_params,
                 save_dir,
                 error_plotter,
                 device=device

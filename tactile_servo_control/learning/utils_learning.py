@@ -106,11 +106,6 @@ class PoseEncoder:
         To    -> {x, y, z, Rx, Ry, Rz}
         """
 
-        single_element_labels = \
-            self.target_label_names.count("x") + \
-            self.target_label_names.count("y") + \
-            self.target_label_names.count("z")
-
         # decode preictable label to pose
         decoded_pose = {
             'x': torch.zeros(outputs.shape[0]),
@@ -121,26 +116,24 @@ class PoseEncoder:
             'Rz': torch.zeros(outputs.shape[0]),
         }
 
-        for i, label_name in enumerate(self.target_label_names):
+        label_name_idx = 0
+        for label_name in self.target_label_names:
 
             if label_name in POS_LABEL_NAMES:
-                label_name_idx = i
                 predictions = outputs[:, label_name_idx].detach().cpu()
-
                 llim = self.pose_llims_np[POSE_LABEL_NAMES.index(label_name)]
                 ulim = self.pose_ulims_np[POSE_LABEL_NAMES.index(label_name)]
                 decoded_predictions = (((predictions + 1) / 2) * (ulim - llim)) + llim
                 decoded_pose[label_name] = decoded_predictions
+                label_name_idx += 1
 
             if label_name in ROT_LABEL_NAMES:
-                label_name_idx = single_element_labels + (2 * (i-single_element_labels))
                 sin_predictions = outputs[:, label_name_idx].detach().cpu()
                 cos_predictions = outputs[:, label_name_idx + 1].detach().cpu()
-
                 pred_rot = torch.atan2(sin_predictions, cos_predictions)
                 pred_rot = pred_rot * (180.0 / np.pi)
-
                 decoded_pose[label_name] = pred_rot
+                label_name_idx += 2
 
         return decoded_pose
 
