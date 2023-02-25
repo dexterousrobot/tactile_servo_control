@@ -1,69 +1,43 @@
+# -*- coding: utf-8 -*-
 """
-python train_model.py -t surface_3d
-python train_model.py -t edge_2d
-python train_model.py -t edge_3d
-python train_model.py -t edge_5d
 python train_model.py -t surface_3d edge_2d edge_3d edge_5d
 """
 import os
-import argparse
 import shutil
-
-from tactile_servo_control.learning.setup_learning import setup_model
-from tactile_servo_control.learning.setup_learning import setup_learning
-from tactile_servo_control.learning.setup_learning import setup_task
 
 from tactile_learning.supervised.models import create_model
 from tactile_learning.utils.utils_learning import seed_everything, make_dir
 
-from tactile_servo_control.learning.train_model import train_model
-from tactile_servo_control.learning.evaluate_model import evaluate_model
-from tactile_servo_control.learning.utils_plots import ErrorPlotter
+from setup_learning import setup_model, setup_learning, setup_task
+from utils_learning import ErrorPlotter, PoseEncoder, get_pose_limits, csv_row_to_label
+from train_model import train_model
+from evaluate_model import evaluate_model
 
-from tactile_servo_control.learning.utils_learning import PoseEncoder
-from tactile_servo_control.learning.utils_learning import get_pose_limits
-from tactile_servo_control.learning.utils_learning import csv_row_to_label
+from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
+from tactile_servo_control.collect_data.utils_collect_data import setup_parse
 
-from tactile_servo_control import BASE_DATA_PATH
-from tactile_servo_control import BASE_MODEL_PATH
+data_version = ''
+model_version = '_test'
 
 
 def launch():
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-t', '--tasks',
-        nargs='+',
-        help="Choose task from ['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d'].",
-        default=['edge_2d']
-    )
-    parser.add_argument(
-        '-m', '--models',
-        nargs='+',
-        help="Choose model from ['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit'].",
-        default=['simple_cnn']
-    )
-    parser.add_argument(
-        '-d', '--device',
-        type=str,
-        help="Choose device from ['cpu', 'cuda'].",
-        default='cuda'
-    )
-
-    # parse arguments
-    args = parser.parse_args()
-    tasks = args.tasks
-    models = args.models
-    device = args.device
+    input_args = {
+        'tasks':   [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'models':  [['simple_cnn'], "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
+        'reality': ['sim',          "['sim', 'real'"],
+        'device':  ['cuda',         "['cpu', 'cuda']"],
+    }
+    tasks, model_types, reality, device = setup_parse(input_args)
 
     for task in tasks:
-        for model_type in models:
+        for model_type in model_types:
 
             # task specific parameters
             out_dim, label_names = setup_task(task)
 
             # setup save dir
-            save_dir = os.path.join(BASE_MODEL_PATH, task, model_type)
+            save_dir = os.path.join(BASE_MODEL_PATH, reality, task, model_type + model_version)
             make_dir(save_dir)
 
             # setup parameters
@@ -71,7 +45,7 @@ def launch():
             learning_params, image_processing_params, augmentation_params = setup_learning(save_dir)
 
             # keep record of sensor params
-            shutil.copy(os.path.join(BASE_DATA_PATH, task, 'train', 'sensor_params.json'), save_dir)
+            shutil.copy(os.path.join(BASE_DATA_PATH, reality, task, 'train', 'sensor_params.json'), save_dir)
 
             # create the model
             seed_everything(learning_params['seed'])
@@ -84,12 +58,12 @@ def launch():
 
             # data dir - can specify list of directories as these are combined in generator
             train_data_dirs = [
-                os.path.join(BASE_DATA_PATH, task, 'train')
+                os.path.join(BASE_DATA_PATH, reality, task + data_version, 'train')
             ]
             pose_limits = get_pose_limits(train_data_dirs, save_dir)
 
             val_data_dirs = [
-                os.path.join(BASE_DATA_PATH, task, 'val')
+                os.path.join(BASE_DATA_PATH, reality, task + data_version, 'val')
             ]
 
             # create the encoder/decoder for labels

@@ -1,11 +1,4 @@
-"""
-python train_model.py -t surface_3d
-python train_model.py -t edge_2d
-python train_model.py -t edge_3d
-python train_model.py -t edge_5d
-python train_model.py -t surface_3d edge_2d edge_3d edge_5d
-"""
-
+# -*- coding: utf-8 -*-
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 
 import os
@@ -18,7 +11,7 @@ from torch.autograd import Variable
 import torch.optim as optim
 import torch.nn as nn
 import torch
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -38,7 +31,7 @@ def train_model(
     device='cpu'
 ):
     # tensorboard writer for tracking vars
-    writer = SummaryWriter(os.path.join(save_dir, 'tensorboard_runs'))
+    # writer = SummaryWriter(os.path.join(save_dir, 'tensorboard_runs'))
 
     # set generators and loaders
     train_generator = ImageDataGenerator(
@@ -228,24 +221,24 @@ def train_model(
             print("")
 
             # write vals to tensorboard
-            writer.add_scalar('loss/train', np.mean(train_epoch_loss), epoch)
-            writer.add_scalar('loss/val', np.mean(val_epoch_loss), epoch)
-            writer.add_scalar('accuracy/train', np.mean(train_epoch_acc), epoch)
-            writer.add_scalar('accuracy/val', np.mean(val_epoch_acc), epoch)
-            writer.add_scalar('learning_rate', get_lr(optimizer), epoch)
+            # writer.add_scalar('loss/train', np.mean(train_epoch_loss), epoch)
+            # writer.add_scalar('loss/val', np.mean(val_epoch_loss), epoch)
+            # writer.add_scalar('accuracy/train', np.mean(train_epoch_acc), epoch)
+            # writer.add_scalar('accuracy/val', np.mean(val_epoch_acc), epoch)
+            # writer.add_scalar('learning_rate', get_lr(optimizer), epoch)
 
-            for label_name in target_label_names:
-                if calculate_train_metrics:
-                    writer.add_scalar(f'accuracy/train/{label_name}', train_acc_df[label_name].mean(), epoch)
-                    writer.add_scalar(f'loss/train/{label_name}', train_err_df[label_name].mean(), epoch)
-                writer.add_scalar(f'accuracy/val/{label_name}', val_acc_df[label_name].mean(), epoch)
-                writer.add_scalar(f'loss/val/{label_name}', val_err_df[label_name].mean(), epoch)
+            # for label_name in target_label_names:
+            #     if calculate_train_metrics:
+            #         writer.add_scalar(f'accuracy/train/{label_name}', train_acc_df[label_name].mean(), epoch)
+            #         writer.add_scalar(f'loss/train/{label_name}', train_err_df[label_name].mean(), epoch)
+            #     writer.add_scalar(f'accuracy/val/{label_name}', val_acc_df[label_name].mean(), epoch)
+            #     writer.add_scalar(f'loss/val/{label_name}', val_err_df[label_name].mean(), epoch)
 
-            # track weights on tensorboard
-            for name, weight in model.named_parameters():
-                full_name = f'{os.path.basename(os.path.normpath(save_dir))}/{name}'
-                writer.add_histogram(full_name, weight, epoch)
-                writer.add_histogram(f'{full_name}.grad', weight.grad, epoch)
+            # # track weights on tensorboard
+            # for name, weight in model.named_parameters():
+            #     full_name = f'{os.path.basename(os.path.normpath(save_dir))}/{name}'
+            #     writer.add_histogram(full_name, weight, epoch)
+            #     writer.add_histogram(f'{full_name}.grad', weight.grad, epoch)
 
             # update plots
             if error_plotter:

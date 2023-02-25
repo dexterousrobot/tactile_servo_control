@@ -1,10 +1,4 @@
-"""
-python evaluate_model.py -t surface_3d
-python evaluate_model.py -t edge_2d
-python evaluate_model.py -t edge_3d
-python evaluate_model.py -t edge_5d
-python evaluate_model.py -t surface_3d edge_2d edge_3d edge_5d
-"""
+# -*- coding: utf-8 -*-
 import os
 import argparse
 import pandas as pd
@@ -15,13 +9,10 @@ from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.utils.utils_learning import load_json_obj
 
-from tactile_servo_control.learning.setup_learning import setup_task
-from tactile_servo_control.learning.utils_plots import ErrorPlotter
-from tactile_servo_control.learning.utils_learning import PoseEncoder
-from tactile_servo_control.learning.utils_learning import csv_row_to_label
+from setup_learning import setup_task
+from utils_learning import ErrorPlotter, PoseEncoder, csv_row_to_label
 
-from tactile_servo_control import BASE_DATA_PATH
-from tactile_servo_control import BASE_MODEL_PATH
+from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 

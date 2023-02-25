@@ -1,8 +1,5 @@
+# -*- coding: utf-8 -*-
 """
-python demo_image_generation.py -t surface_3d
-python demo_image_generation.py -t edge_2d
-python demo_image_generation.py -t edge_3d
-python demo_image_generation.py -t edge_5d
 python demo_image_generation.py -t surface_3d edge_2d edge_3d edge_5d
 """
 

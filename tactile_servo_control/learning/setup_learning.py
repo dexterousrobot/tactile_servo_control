@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 
 from tactile_learning.utils.utils_learning import save_json_obj
@@ -9,13 +10,13 @@ def setup_learning(save_dir=None):
     learning_params = {
         'seed': 42,
         'batch_size': 16,
-        'epochs': 250,
+        'epochs': 2,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
         'adam_decay': 1e-6,
         'shuffle': True,
-        'n_cpu': 8,
+        'n_cpu': 1,
     }
 
     image_processing_params = {

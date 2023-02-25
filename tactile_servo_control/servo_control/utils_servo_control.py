@@ -1,85 +1,37 @@
+# -*- coding: utf-8 -*-
 import os
 import numpy as np
 import torch
 from torch.autograd import Variable
 
+import matplotlib
+matplotlib.use("TkAgg") # change backend to stop plt stealing focus
+import matplotlib.pylab as plt
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-from tactile_gym_servo_control.learning.utils_learning import decode_pose
-from tactile_gym_servo_control.learning.utils_learning import POSE_LABEL_NAMES
-from tactile_gym_servo_control.utils.image_transforms import process_image
+from cri.robot import quat2euler, euler2quat, inv_transform
+from tactile_servo_control.learning.utils_learning import PoseEncoder, POSE_LABEL_NAMES
+from tactile_image_processing.image_transforms import process_image
 
-LEFT, RIGHT, FORE, BACK, SHIFT, CTRL, QUIT \
-    = 65295, 65296, 65297, 65298, 65306, 65307, ord('Q')
-
-
-def keyboard(embodiment,  
-    delta_init = [0.0, 0, 0, 0, 0, 0]
-):
-    delta = np.array([0, 0, 0, 0, 0, 0]) + delta_init # stop keeping state
-
-    keys = embodiment._pb.getKeyboardEvents()
-    if embodiment._pb.KEY_WAS_TRIGGERED:
-        if CTRL in keys:
-            if FORE in keys:  delta -= [0, 0, 0, 0, 1, 0]
-            if BACK in keys:  delta += [0, 0, 0, 0, 1, 0]
-            if RIGHT in keys: delta -= [0, 0, 0, 1, 0, 0]
-            if LEFT in keys:  delta += [0, 0, 0, 1, 0, 0]
-        elif SHIFT in keys:
-            if FORE in keys:  delta -= [0, 0, 1, 0, 0, 0]
-            if BACK in keys:  delta += [0, 0, 1, 0, 0, 0]
-            if RIGHT in keys: delta -= [0, 0, 0, 0, 0, 2.5]
-            if LEFT in keys:  delta += [0, 0, 0, 0, 0, 2.5]
-        else:
-            if FORE in keys:  delta -= [1, 0, 0, 0, 0, 0]
-            if BACK in keys:  delta += [1, 0, 0, 0, 0, 0]
-            if RIGHT in keys: delta -= [0, 1, 0, 0, 0, 0]
-            if LEFT in keys:  delta += [0, 1, 0, 0, 0, 0]
-        if QUIT in keys:  delta = None
-
-    return np.array(delta)
-
-
-class Slider:
+class PoseModel:
     def __init__(self,
-        embodiment, init_ref_pose,
-        ref_llims=[-5, -5, 0, -15, -15, -180],
-        ref_ulims=[ 5,  5, 5,  15,  15,  180]
-    ):    
-        self.embodiment = embodiment
-        self.ref_pose_ids = []
-        for label_name in POSE_LABEL_NAMES:
-            i = POSE_LABEL_NAMES.index(label_name)
-            self.ref_pose_ids.append(
-                embodiment._pb.addUserDebugParameter(
-                    label_name, ref_llims[i], ref_ulims[i], init_ref_pose[i]
-                )
-            )
-
-    def slide(self, ref_pose):
-        for j in range(len(ref_pose)):
-            ref_pose[j] = self.embodiment._pb.readUserDebugParameter(
-                self.ref_pose_ids[j]
-            ) 
-
-        return ref_pose
-
-
-class Model:
-    def __init__(self,
-        model, image_processing_params, pose_params, 
+        model, 
+        image_processing_params, 
+        pose_params, 
         label_names, 
         device='cpu'
     ):
         self.model = model
         self.image_processing_params = image_processing_params
         self.label_names = label_names 
-        self.pose_limits = [pose_params['pose_llims'], pose_params['pose_ulims']]
         self.device = device
 
-    def predict(self, 
-        tactile_image
-    ):
+        pose_limits = [pose_params['pose_llims'], pose_params['pose_ulims']]
+        self.pose_encoder = PoseEncoder(label_names, pose_limits, device)
+
+    def predict(self, tactile_image):
+
         processed_image = process_image(
             tactile_image,
             gray=False,
@@ -94,16 +46,133 @@ class Model:
 
         # perform inference with the trained model
         model_input = Variable(torch.from_numpy(processed_image)).float().to(self.device)
-        raw_predictions = self.model(model_input)
+        outputs = self.model(model_input)
 
         # decode the prediction
-        predictions_dict = decode_pose(raw_predictions, self.label_names, self.pose_limits)
+        predictions_dict = self.pose_encoder.decode_label(outputs)
 
-        print("\nPredictions: ", end="")
+        print("\n Predictions: ", end="")
         predictions_arr = np.zeros(6)
         for label_name in self.label_names:
             predicted_val = predictions_dict[label_name].detach().cpu().numpy() 
             predictions_arr[POSE_LABEL_NAMES.index(label_name)] = predicted_val
-            print(label_name, predicted_val, end=" ")
+            with np.printoptions(precision=1, suppress=True):
+                print(label_name, predicted_val, end="")
 
         return predictions_arr
+
+
+def move_figure(f, x, y):
+    """Move figure's upper left corner to pixel (x, y)"""
+    backend = matplotlib.get_backend()
+    if backend == 'TkAgg':
+        f.canvas.manager.window.wm_geometry("+%d+%d" % (x, y))
+    elif backend == 'WXAgg':
+        f.canvas.manager.window.SetPosition((x, y))
+    else:
+        # This works for QT and GTK; can also use window.setGeometry
+        f.canvas.manager.window.move(x, y)
+
+
+class PlotContour2D:
+    def __init__(self, 
+                poses=[[-60,60], [-10,110]],
+                workframe=[0, 0, 0, 0, 0, 90],
+                position=[0, 400],
+                r=[-1,1], 
+                inv=-1
+    ):
+        self._fig = plt.figure('Contour 2d', figsize=(5, 5))
+        self._fig.clear()
+        self._ax = self._fig.add_subplot(111) 
+        self._ax.set_aspect('equal', adjustable='box')
+        
+        self._ax.plot(poses[0], poses[1], ':w')  
+
+        self.r = r[:2]/np.linalg.norm(r[:2])
+        self.a, self.i = (workframe[5]-90)*np.pi/180, inv 
+
+        self.v = [0, 0, 0, 0, 0, 0]
+
+        move_figure(self._fig, *position)
+        self._fig.show()
+
+    def update(self, v):
+        self.v = np.vstack([self.v, v])
+
+        v_q = euler2quat([0, 0, 0, 0, 0, self.i*self.v[-1,5]+self.a], axes='rxyz')
+        d_q = euler2quat([*self.r[::-self.i], 0, 0, 0, 0], axes='rxyz')
+        d = 5*quat2euler(inv_transform(d_q, v_q), axes='rxyz')
+
+        rv = np.zeros(np.shape(self.v))
+        rv[:,0] = self.i * ( np.cos(self.a)*self.v[:,0] - np.sin(self.a)*self.v[:,1] )
+        rv[:,1] = np.sin(self.a)*self.v[:,0] + np.cos(self.a)*self.v[:,1]
+        
+        self._ax.plot(rv[-2:,0], rv[-2:,1], '-r') 
+        self._ax.plot(rv[-2:,0]+[d[0],-d[0]], rv[-2:,1]+[d[1],-d[1]], '-b', linewidth=0.5) 
+
+        self._fig.canvas.flush_events()   # update the plot
+        plt.pause(0.0001)
+
+    def save(self, outfile=None):
+        if outfile is not None:
+            self._fig.savefig(outfile, bbox_inches="tight") 
+
+
+class PlotContour3D:
+    def __init__(self, 
+                workframe=[0, 0, 0, 0, 0, 180],
+                stim_name=None,
+                position=[0, 400],
+                r=[-1,1]/np.sqrt(2),
+                inv=1
+                ):
+
+        if stim_name=='saddle':
+            limits = [[-70,70], [-10,130], [-30,30]]
+        else:
+            limits = [[-110,10], [-60,60], [-30,30]]
+
+        self._fig = plt.figure('Contour 3d', figsize=(5, 5))
+        self._fig.clear()
+        self._fig.subplots_adjust(left=-0.1, right=1.1, bottom=-0.05, top=1.05)
+        self._ax = self._fig.add_subplot(111, projection='3d')
+        self._ax.azim = workframe[5]
+        self._ax.plot(limits[0], limits[1], limits[2], ':w')  
+
+        self.r = r 
+        self.inv = inv 
+        self.v = [0, 0, 0, 0, 0, 0]
+
+        move_figure(self._fig, *position)
+        self._fig.show()
+
+    def update(self, v):
+        self.v = np.vstack([self.v, v])
+
+        v_q = euler2quat([0, 0, 0, *self.v[-1,3:]], axes='rxyz')
+        d_q = euler2quat([*self.r[::-1], 0, 0, 0, 0], axes='rxyz')
+        w_q = euler2quat([0, 0, -1, 0, 0, 0], axes='rxyz')
+        d = 5*quat2euler(inv_transform(d_q, v_q), axes='rxyz')
+        w = 5*quat2euler(inv_transform(w_q, v_q), axes='rxyz')
+
+        self._ax.plot(
+            self.inv*self.v[-2:,0], -self.v[-2:,1], -self.v[-2:,2], 
+            '-r') 
+        self._ax.plot(
+            self.inv*self.v[-2:,0]+[d[0],-d[0]], -self.v[-2:,1]-[d[1],-d[1]], -self.v[-2:,2]-[d[2],-d[2]], 
+            '-b', linewidth=0.5) 
+        self._ax.plot(
+            self.inv*self.v[-2:,0]+[w[0],0], -self.v[-2:,1]-[w[1],0], -self.v[-2:,2]-[w[2],0], 
+            '-g', linewidth=0.5) 
+
+        self._fig.canvas.flush_events()   # update the plot
+        plt.pause(0.0001)
+
+    def save(self, outfile=None):
+        if outfile is not None:
+            self._fig.savefig(outfile, bbox_inches="tight") 
+
+
+if __name__ == '__main__':
+    pass
