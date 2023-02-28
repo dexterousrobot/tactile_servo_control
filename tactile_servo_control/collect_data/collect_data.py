@@ -21,13 +21,14 @@ def collect_data(
     tap_move = [0, 0, 10, 0, 0, 0]
 
     # ==== data collection loop ====
-    for _, row in target_df.iterrows():
+    for i, row in target_df.iterrows():
         i_obj = int(row.loc["obj_id"])
         i_pose = int(row.loc["pose_id"])
         pose = row.loc["pose_1":"pose_6"].values.astype(np.float32)
         move = row.loc["move_1":"move_6"].values.astype(np.float32)
         obj_pose = row.loc["obj_pose"]
         sensor_image = row.loc["sensor_image"]
+        # if i < 2650: continue
 
         # report
         with np.printoptions(precision=1, suppress=True):

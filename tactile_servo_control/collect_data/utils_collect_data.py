@@ -16,8 +16,8 @@ def setup_target_df(
     obj_poses=[[0, 0, 0, 0, 0, 0]]  
 ):
 
-    # generate random poses
-    np.random.seed()
+    # generate random poses 
+    np.random.seed(0) # make predictable
     poses = np.random.uniform(
         low=pose_llims, high=pose_ulims, size=(num_poses, 6)
     )

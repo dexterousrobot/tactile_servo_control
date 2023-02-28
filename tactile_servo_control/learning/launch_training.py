@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python train_model.py -t surface_3d edge_2d edge_3d edge_5d
+python launch_training.py -t surface_3d edge_2d edge_3d edge_5d
 """
 import os
 import shutil
@@ -33,77 +33,74 @@ def launch():
     for task in tasks:
         for model_type in model_types:
 
-            # task specific parameters
-            out_dim, label_names = setup_task(task)
-
             # setup save dir
             save_dir = os.path.join(BASE_MODEL_PATH, reality, task, model_type + model_version)
             make_dir(save_dir)
 
-            # setup parameters
-            network_params = setup_model(model_type, save_dir)
-            learning_params, image_processing_params, augmentation_params = setup_learning(save_dir)
-
-            # keep record of sensor params
-            shutil.copy(os.path.join(BASE_DATA_PATH, reality, task, 'train', 'sensor_params.json'), save_dir)
-
-            # create the model
-            seed_everything(learning_params['seed'])
-            model = create_model(
-                image_processing_params['dims'],
-                out_dim,
-                network_params,
-                device=device
-            )
-
             # data dir - can specify list of directories as these are combined in generator
             train_data_dirs = [
-                os.path.join(BASE_DATA_PATH, reality, task + data_version, 'train')
+                os.path.join(BASE_DATA_PATH, reality, task, 'train' + data_version)
             ]
+            val_data_dirs = [
+                os.path.join(BASE_DATA_PATH, reality, task, 'val' + data_version)
+            ]
+            
+            # setup parameters
+            task_params = setup_task(task, save_dir)   #out_dim, label_names
+            network_params = setup_model(model_type, save_dir)
+            learning_params, image_processing_params, augmentation_params = setup_learning(save_dir)
             pose_limits = get_pose_limits(train_data_dirs, save_dir)
 
-            val_data_dirs = [
-                os.path.join(BASE_DATA_PATH, reality, task + data_version, 'val')
-            ]
+            # # keep record of sensor params
+            # shutil.copy(os.path.join(BASE_DATA_PATH, reality, task, 'train' + data_version, 'sensor_params.json'), save_dir)
 
-            # create the encoder/decoder for labels
-            label_encoder = PoseEncoder(label_names, pose_limits, device)
+            # # create the encoder/decoder for labels
+            # label_encoder = PoseEncoder(task_params['label_names'], pose_limits, device)
 
-            # create instance for plotting errors
-            error_plotter = ErrorPlotter(
-                target_label_names=label_names,
-                save_dir=save_dir,
-                name='error_plot.png',
-                plot_during_training=False
-            )
+            # # create instance for plotting errors
+            # error_plotter = ErrorPlotter(
+            #     task_params['label_names'],
+            #     save_dir,
+            #     name='error_plot.png',
+            #     plot_during_training=False
+            # )
 
-            train_model(
-                model,
-                label_encoder,
-                train_data_dirs,
-                val_data_dirs,
-                csv_row_to_label,
-                learning_params,
-                image_processing_params,
-                augmentation_params,
-                save_dir,
-                error_plotter=error_plotter,
-                calculate_train_metrics=False,
-                device=device
-            )
+            # # create and train model
+            # seed_everything(learning_params['seed'])
+            # model = create_model(
+            #     image_processing_params['dims'],
+            #     task_params['out_dim'],
+            #     network_params,
+            #     device=device
+            # )
 
-            # perform a final evaluation using the best model
-            evaluate_model(
-                task,
-                model,
-                label_encoder,
-                val_data_dirs,
-                learning_params,
-                image_processing_params,
-                save_dir,
-                error_plotter,
-                device=device
-            )
+            # train_model(
+            #     model,
+            #     label_encoder,
+            #     train_data_dirs,
+            #     val_data_dirs,
+            #     csv_row_to_label,
+            #     learning_params,
+            #     image_processing_params,
+            #     augmentation_params,
+            #     save_dir,
+            #     error_plotter=error_plotter,
+            #     calculate_train_metrics=False,
+            #     device=device
+            # )
+
+            # # perform a final evaluation using the best model
+            # evaluate_model(
+            #     task,
+            #     model,
+            #     label_encoder,
+            #     val_data_dirs,
+            #     learning_params,
+            #     image_processing_params,
+            #     save_dir,
+            #     error_plotter,
+            #     device=device
+            # )
 
 
 if __name__ == "__main__":

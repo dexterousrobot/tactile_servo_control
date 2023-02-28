@@ -1,6 +1,6 @@
 import os
 
-from cri.robot import SyncRobot
+from cri.robot import SyncRobot, AsyncRobot
 from cri.controller import SimController
 from cri.controller import CRController
 from cri.controller import MG400Controller
@@ -34,9 +34,9 @@ def setup_embodiment_real(
 
     # setup the embodiment
     if env_params['robot'] == 'MG400':
-        embodiment = SyncRobot(MG400Controller())
-    elif env_params['robot'] == 'CR':
-        embodiment = SyncRobot(CRController())
+        embodiment = AsyncRobot(SyncRobot(MG400Controller()))
+    elif env_params['robot'] == 'CR3':
+        embodiment = AsyncRobot(SyncRobot(CRController()))
     embodiment.sensor = RealSensor(sensor_params)
 
     # settings

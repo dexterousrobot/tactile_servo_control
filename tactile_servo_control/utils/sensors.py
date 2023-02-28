@@ -1,7 +1,7 @@
 import cv2
 
-from tactile_gym_servo_control.utils.image_transforms import process_image
-# from tactile_image_processing.image_transforms import process_image
+# from tactile_gym_servo_control.utils.image_transforms import process_image
+from tactile_image_processing.image_transforms import process_image
 
 
 class SimSensor:

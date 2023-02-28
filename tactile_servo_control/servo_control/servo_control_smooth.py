@@ -29,11 +29,16 @@ def servo_control(
 
     # initialise controller and pose
     controller = PIDController(**pid_params)
-    pose = [0, 0, 0, 0, 0, 0]
+    pose = (0, 0, 0, 0, 0, 0)
 
     # move to initial pose from 50mm above workframe
-    embodiment.move_linear((0, 0, -50, 0, 0, 0))
+    embodiment.move_linear([0, 0, -50, 0, 0, 0])
     embodiment.move_linear(pose)
+
+    # turn on servo mode
+    embodiment.sync_robot.controller.servo_mode = True
+    embodiment.sync_robot.controller.servo_delay = 0.1
+    embodiment.async_move_linear(pose)
 
     # iterate through servo control
     for i in range(ep_len):
@@ -53,7 +58,8 @@ def servo_control(
         pose = inv_transform_pose(servo, tcp_pose)
 
         # move to new pose
-        embodiment.move_linear(pose)
+        embodiment.async_result()
+        embodiment.async_move_linear(pose)
 
         # slider control
         ref_pose = slider.read(ref_pose)
@@ -71,12 +77,13 @@ def servo_control(
         # embodiment.controller._client._sim_env.arm.draw_TCP(lifetime=10.0)
 
     # finish 50mm above initial pose
+    embodiment.async_result()
     embodiment.move_linear((0, 0, -50, 0, 0, 0))
     try:
         embodiment.move_joints((*embodiment.joint_angles[:-1], 0))
     except:
         pass
-
+    embodiment.move_linear((0, 0, -50, 0, 0, 0))
     embodiment.close()
 
     # optionally save plot and render view
