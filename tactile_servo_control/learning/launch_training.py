@@ -7,6 +7,8 @@ import shutil
 
 from tactile_learning.supervised.models import create_model
 from tactile_learning.utils.utils_learning import seed_everything, make_dir
+from tactile_learning.supervised.image_generator import ImageDataGenerator
+from tactile_learning.supervised.train_model_w_metrics import train_model_w_metrics
 
 from setup_learning import setup_model, setup_learning, setup_task
 from utils_learning import ErrorPlotter, PoseEncoder, get_pose_limits, csv_row_to_label
@@ -51,56 +53,56 @@ def launch():
             learning_params, image_processing_params, augmentation_params = setup_learning(save_dir)
             pose_limits = get_pose_limits(train_data_dirs, save_dir)
 
-            # # keep record of sensor params
-            # shutil.copy(os.path.join(BASE_DATA_PATH, reality, task, 'train' + data_version, 'sensor_params.json'), save_dir)
+            # keep record of sensor params
+            shutil.copy(os.path.join(BASE_DATA_PATH, reality, task, 'train' + data_version, 'sensor_params.json'), save_dir)
 
-            # # create the encoder/decoder for labels
-            # label_encoder = PoseEncoder(task_params['label_names'], pose_limits, device)
+            # create the encoder/decoder for labels
+            label_encoder = PoseEncoder(task_params['label_names'], pose_limits, device)
 
-            # # create instance for plotting errors
-            # error_plotter = ErrorPlotter(
-            #     task_params['label_names'],
-            #     save_dir,
-            #     name='error_plot.png',
-            #     plot_during_training=False
-            # )
+            # create instance for plotting errors
+            error_plotter = ErrorPlotter(
+                task_params['label_names'],
+                save_dir,
+                name='error_plot.png',
+                plot_during_training=False
+            )
 
-            # # create and train model
-            # seed_everything(learning_params['seed'])
-            # model = create_model(
-            #     image_processing_params['dims'],
-            #     task_params['out_dim'],
-            #     network_params,
-            #     device=device
-            # )
+            # create and train model
+            seed_everything(learning_params['seed'])
+            model = create_model(
+                image_processing_params['dims'],
+                task_params['out_dim'],
+                network_params,
+                device=device
+            )
 
-            # train_model(
-            #     model,
-            #     label_encoder,
-            #     train_data_dirs,
-            #     val_data_dirs,
-            #     csv_row_to_label,
-            #     learning_params,
-            #     image_processing_params,
-            #     augmentation_params,
-            #     save_dir,
-            #     error_plotter=error_plotter,
-            #     calculate_train_metrics=False,
-            #     device=device
-            # )
+            train_model(
+                model,
+                label_encoder,
+                train_data_dirs,
+                val_data_dirs,
+                csv_row_to_label,
+                learning_params,
+                image_processing_params,
+                augmentation_params,
+                save_dir,
+                error_plotter=error_plotter,
+                calculate_train_metrics=False,
+                device=device
+            )
 
-            # # perform a final evaluation using the best model
-            # evaluate_model(
-            #     task,
-            #     model,
-            #     label_encoder,
-            #     val_data_dirs,
-            #     learning_params,
-            #     image_processing_params,
-            #     save_dir,
-            #     error_plotter,
-            #     device=device
-            # )
+            # perform a final evaluation using the best model
+            evaluate_model(
+                task,
+                model,
+                label_encoder,
+                val_data_dirs,
+                learning_params,
+                image_processing_params,
+                save_dir,
+                error_plotter,
+                device=device
+            )
 
 
 if __name__ == "__main__":

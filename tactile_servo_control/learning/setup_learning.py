@@ -5,6 +5,32 @@ import pandas as pd
 from tactile_learning.utils.utils_learning import save_json_obj
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-t', '--tasks',
+        nargs='+',
+        help="Choose task from ['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d'].",
+        default=['edge_2d']
+    )
+    parser.add_argument(
+        '-m', '--models',
+        nargs='+',
+        help="Choose model from ['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit'].",
+        default=['simple_cnn']
+    )
+    parser.add_argument(
+        '-d', '--device',
+        type=str,
+        help="Choose device from ['cpu', 'cuda'].",
+        default='cuda'
+    )
+
+    # parse arguments
+    args = parser.parse_args()
+    return args
+
+
 def setup_learning(save_dir=None):
 
     # Parameters
@@ -16,6 +42,8 @@ def setup_learning(save_dir=None):
         'lr_factor': 0.5,
         'lr_patience': 10,
         'adam_decay': 1e-6,
+        'adam_b1': 0.9,
+        'adam_b2': 0.999,
         'shuffle': True,
         'n_cpu': 1,
     }

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import argparse
 import pandas as pd
 from torch.autograd import Variable
 import torch
@@ -21,19 +20,12 @@ def evaluate_model(
     task,
     model,
     label_encoder,
-    data_dirs,
+    generator,
     learning_params,
-    image_processing_params,
     save_dir,
     error_plotter,
     device='cpu'
 ):
-    # set generators and loaders
-    generator = ImageDataGenerator(
-        data_dirs=data_dirs,
-        csv_row_to_label=csv_row_to_label,
-        **image_processing_params
-    )
 
     loader = torch.utils.data.DataLoader(
         generator,
@@ -96,28 +88,8 @@ def evaluate_model(
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-t', '--tasks',
-        nargs='+',
-        help="Choose task from ['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d'].",
-        default=['edge_2d']
-    )
-    parser.add_argument(
-        '-m', '--models',
-        nargs='+',
-        help="Choose model from ['simple_cnn', 'nature_cnn', 'resnet', 'vit'].",
-        default=['simple_cnn']
-    )
-    parser.add_argument(
-        '-d', '--device',
-        type=str,
-        help="Choose device from ['cpu', 'cuda'].",
-        default='cuda'
-    )
-
     # parse arguments
-    args = parser.parse_args()
+    args = parse_args()
     tasks = args.tasks
     models = args.models
     device = args.device
@@ -133,7 +105,7 @@ if __name__ == "__main__":
             save_dir = os.path.join(BASE_MODEL_PATH, task, model_type)
 
             # setup parameters
-            network_params = load_json_obj(os.path.join(save_dir, 'model_params'))
+            model_params = load_json_obj(os.path.join(save_dir, 'model_params'))
             learning_params = load_json_obj(os.path.join(save_dir, 'learning_params'))
             image_processing_params = load_json_obj(os.path.join(save_dir, 'image_processing_params'))
 
@@ -143,18 +115,23 @@ if __name__ == "__main__":
 
             # create the model
             model = create_model(
-                image_processing_params['dims'],
-                out_dim,
-                network_params,
-                saved_model_dir=save_dir,  # loads weights of best_model.pth
+                in_dim=image_processing_params['dims'],
+                in_channels=1,
+                out_dim=out_dim,
+                model_params=model_params,
                 device=device
             )
+
             model.eval()
 
             val_data_dirs = [
                 os.path.join(BASE_DATA_PATH, task, 'val')
             ]
-
+            val_generator = ImageDataGenerator(
+                data_dirs=val_data_dirs,
+                csv_row_to_label=csv_row_to_label,
+                **image_processing_params
+            )
             # create the encoder/decoder for labels
             label_encoder = PoseEncoder(label_names, pose_limits, device)
 
@@ -170,9 +147,8 @@ if __name__ == "__main__":
                 task,
                 model,
                 label_encoder,
-                val_data_dirs,
+                val_generator,
                 learning_params,
-                image_processing_params,
                 save_dir,
                 error_plotter,
                 device=device
