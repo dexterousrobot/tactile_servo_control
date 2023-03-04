@@ -11,14 +11,14 @@ def collect_data(
     image_dir
 ):
     # start 50mm above workframe origin
-    embodiment.move_linear([0, 0, -50, 0, 0, 0])
+    embodiment.move_linear((0, 0, 50, 0, 0, 0))
 
     # collect reference image
     image_outfile = os.path.join(image_dir, 'image_0.png')
     embodiment.sensor.process(image_outfile)
 
     # drop 10mm to contact object
-    tap_move = [0, 0, 10, 0, 0, 0]
+    tap = (0, 0, -10, 0, 0, 0)
 
     # ==== data collection loop ====
     for i, row in target_df.iterrows():
@@ -28,7 +28,6 @@ def collect_data(
         move = row.loc["move_1":"move_6"].values.astype(np.float32)
         obj_pose = row.loc["obj_pose"]
         sensor_image = row.loc["sensor_image"]
-        # if i < 2650: continue
 
         # report
         with np.printoptions(precision=1, suppress=True):
@@ -38,7 +37,7 @@ def collect_data(
         pose += obj_pose
 
         # move to above new pose (avoid changing pose in contact with object)
-        embodiment.move_linear(pose + move - tap_move)
+        embodiment.move_linear(pose + move - tap)
  
         # move down to offset position
         embodiment.move_linear(pose + move)
@@ -51,12 +50,11 @@ def collect_data(
         embodiment.sensor.process(image_outfile)
 
         # move to target positon inducing shear effects
-        embodiment.move_linear(pose - tap_move)
+        embodiment.move_linear(pose - tap)
 
     # finish 50mm above workframe origin then zero last joint 
-    embodiment.move_linear([0, 0, -50, 0, 0, 0])
-    embodiment.move_joints([*embodiment.joint_angles[:-1], 0])
-
+    embodiment.move_linear((0, 0, 50, 0, 0, 0))
+    embodiment.move_joints((*embodiment.joint_angles[:-1], 0))
     embodiment.close()
 
 

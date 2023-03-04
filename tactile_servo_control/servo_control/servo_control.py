@@ -48,9 +48,8 @@ def servo_control(
         # aervo control output in sensor frame
         servo = controller.update(pred_pose, ref_pose)
         
-        # new pose applies servo to tcp_pose 
-        tcp_pose = embodiment.pose
-        pose = inv_transform_pose(servo, tcp_pose)
+        # new pose applies servo to end effector pose 
+        pose = inv_transform_pose(servo, embodiment.pose)
 
         # move to new pose
         embodiment.move_linear(pose)
@@ -70,13 +69,9 @@ def servo_control(
             print(f'\n step {i+1}: pose: {pose}')
         # embodiment.controller._client._sim_env.arm.draw_TCP(lifetime=10.0)
 
-    # finish 50mm above initial pose
+    # finish 50mm above initial pose and zero joint_6
     embodiment.move_linear((0, 0, -50, 0, 0, 0))
-    try:
-        embodiment.move_joints((*embodiment.joint_angles[:-1], 0))
-    except:
-        pass
-
+    embodiment.move_joints((*embodiment.joint_angles[:-1], 0))
     embodiment.close()
 
     # optionally save plot and render view

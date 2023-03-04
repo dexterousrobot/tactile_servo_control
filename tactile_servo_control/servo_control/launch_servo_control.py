@@ -15,7 +15,7 @@ from servo_control import servo_control
 from setup_servo_control import setup_servo_control 
 from utils_servo_control import PoseModel
 
-model_version = '_CR'
+model_version = ''#_CR'
 test_version = ''
 
 
@@ -24,7 +24,7 @@ def launch():
     input_args = {
         'tasks':   [['edge_2d'], "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
         'stimuli': [['circle'],  "['circle', 'square', 'clover', 'foil', 'saddle', 'bowl']"],
-        'reality': ['real',       "['sim', 'real'"],
+        'reality': ['sim',       "['sim', 'real'"],
         'device':  ['cuda',      "['cpu', 'cuda']"],
     }
     tasks, stimuli, reality, device = setup_parse(input_args)

@@ -84,17 +84,18 @@ def setup_env_params(reality, task, stimulus, save_dir=None):
 
     if reality == 'real':
         env_params = {
-            'robot': 'CR3',
+            'robot': 'CR',
             'tcp_pose': (0, 0, 100, 0, 0, 0),
             'stim_name': stimulus,
             'linear_speed': 30, 
             'angular_speed': 20,
-            'model_type': 'posenet_cnn'
+            'model_type': 'posenet_cnn',
+            'servo_delay': 0.1
         }
 
     elif reality == 'sim':
         env_params = {
-            'robot': 'UR5',
+            'robot': 'sim',
             'tcp_pose': (0, 0, 0, 0, 0, 0),
             'stim_name': stimulus,
             'stim_pose': (600, 0, 0, 0, 0, 0),
@@ -107,12 +108,12 @@ def setup_env_params(reality, task, stimulus, save_dir=None):
     work_frame_df = pd.DataFrame(
         columns = ['reality', 'robot', 'task',    'stimulus', 'work_frame'],
         data = [
-                #   ['real',    'CR3',   'edge',    'circle',   (0,  -370,  65, -180, 0, 180)],
-                  ['real',    'CR3',   'edge',    'circle',   (0,  -470,  65, -180, 0, 0)],
-                  ['sim',     'UR5',   'edge',    'circle',   (650,   0, 40-3, -180, 0, 0)],
-                  ['sim',     'UR5',   'edge',    'saddle',   (600, -65, 55-3, -180, 0, 0)],
-                  ['sim',     'UR5',   'surface', 'saddle',   (600, -65, 55-3, -180, 0, 0)],
-                  ['sim',     'UR5',   'edge',    'bowl',     (600,   0,   25, -180, 0, 0)],
+                #   ['real',    'CR',   'edge',    'circle',   (0,  -370,  65, -180, 0, 180)],
+                  ['real',    'CR',   'edge',    'circle',   (0,  -470,  65, -180, 0, 0)],
+                  ['sim',     'sim',   'edge',    'circle',   (650,   0, 40-3, -180, 0, 0)],
+                  ['sim',     'sim',   'edge',    'saddle',   (600, -65, 55-3, -180, 0, 0)],
+                  ['sim',     'sim',   'surface', 'saddle',   (600, -65, 55-3, -180, 0, 0)],
+                  ['sim',     'sim',   'edge',    'bowl',     (600,   0,   25, -180, 0, 0)],
         ]
     )
 

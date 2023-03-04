@@ -1,63 +1,33 @@
 import os
 
-from cri.robot import SyncRobot, AsyncRobot
-from cri.controller import SimController
-from cri.controller import CRController
-from cri.controller import MG400Controller
-
+from cri.robot import SyncRobot
+from cri.controller import Controller
 from tactile_servo_control.utils.sensors import SimSensor, RealSensor
 
 
-def setup_embodiment_sim(
+def setup_embodiment(
     env_params={},
     sensor_params={}
 ):
-    env_params['stim_path'] = os.path.join(os.path.dirname(__file__), 'stimuli')
-
-    # setup the embodiment
-    embodiment = SyncRobot(SimController(sensor_params, env_params))   
-    embodiment.sensor = SimSensor(embodiment, sensor_params)
-
-    # settings
-    embodiment.coord_frame = env_params['work_frame']
-    embodiment.tcp = env_params['tcp_pose']
-
-    return embodiment
-
-
-def setup_embodiment_real(
-    env_params={},    
-    sensor_params={},
-):
-    linear_speed = env_params.get('linear_speed', 10)
-    angular_speed = env_params.get('angular_speed', 10)
-
-    # setup the embodiment
-    if env_params['robot'] == 'MG400':
-        embodiment = AsyncRobot(SyncRobot(MG400Controller()))
-    elif env_params['robot'] == 'CR3':
-        embodiment = AsyncRobot(SyncRobot(CRController()))
-    embodiment.sensor = RealSensor(sensor_params)
+  
+    if env_params['robot'] == 'Sim':
+        env_params['stim_path'] = os.path.join(os.path.dirname(__file__), 'stimuli')
+        embodiment = SyncRobot(Controller[env_params['robot']](sensor_params, env_params))
+        embodiment.sensor = SimSensor(embodiment, sensor_params)
+  
+    else:
+        embodiment = SyncRobot(Controller[env_params['robot']]())   
+        embodiment.sensor = RealSensor(sensor_params)
+        embodiment.speed = env_params['speed']
 
     # settings
     embodiment.coord_frame = env_params['work_frame']
     embodiment.tcp = env_params['tcp_pose']
-    embodiment.linear_speed = linear_speed
-    embodiment.angular_speed = angular_speed
-
-    return embodiment
-
-
-def setup_embodiment(
-    reality, 
-    env_params, 
-    sensor_params
-):
-    if reality == 'real':
-        embodiment = setup_embodiment_real(env_params, sensor_params)
     
-    elif reality == 'sim':
-        embodiment = setup_embodiment_sim(env_params, sensor_params)
+    # turn on servo mode if a delay has been set
+    if 'servo_delay' in env_params:
+        embodiment.controller.servo_mode = True
+        embodiment.controller.servo_delay = env_params['servo_delay']
 
     return embodiment
 

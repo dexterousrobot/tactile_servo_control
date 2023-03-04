@@ -20,30 +20,29 @@ collect_params = {
 
 def launch():
 
-    tasks, reality = setup_parse({
+    tasks, robot = setup_parse({
         'tasks':  [['edge_2d'], "[surface_3d edge_2d edge_3d edge_5d]"],
-        'reality': ['real',      "sim or real"],
+        'robot':  ['CR',       "Sim, MG400, CR"],
     })
     
     for task in tasks:
         for dir_name, num_samples in collect_params.items():
 
             # setup save dir
-            save_dir = os.path.join(BASE_DATA_PATH, reality, task, dir_name)
+            save_dir = os.path.join(BASE_DATA_PATH, robot, task, dir_name)
             image_dir = os.path.join(save_dir, "images")
             make_dir(save_dir)
             make_dir(image_dir)
 
             # setup parameters
             sensor_params, pose_params, env_params = setup_collect_data(
-                reality, 
+                robot, 
                 task, 
                 save_dir
             )
 
             # setup embodiment
             embodiment = setup_embodiment(
-                reality, 
                 env_params, 
                 sensor_params
             )
