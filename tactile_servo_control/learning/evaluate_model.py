@@ -12,6 +12,7 @@ from setup_learning import setup_task
 from utils_learning import ErrorPlotter, PoseEncoder, csv_row_to_label
 
 from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
+from tactile_servo_control.collect_data.utils_collect_data import setup_parse
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -88,14 +89,16 @@ def evaluate_model(
 
 if __name__ == "__main__":
 
-    # parse arguments
-    args = parse_args()
-    tasks = args.tasks
-    models = args.models
-    device = args.device
+    input_args = {
+        'tasks':   [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'models':  [['simple_cnn'], "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
+        'robot':   ['CR',           "['Sim', 'MG400', 'CR']"],
+        'device':  ['cuda',         "['cpu', 'cuda']"],
+    }
+    tasks, model_types, reality, device = setup_parse(input_args)
 
     # test the trained networks
-    for model_type in models:
+    for model_type in model_types:
         for task in tasks:
 
             # task specific parameters

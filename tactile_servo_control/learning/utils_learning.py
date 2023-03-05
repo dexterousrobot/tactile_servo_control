@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from tactile_learning.utils.utils_learning import save_json_obj, load_json_obj
+from tactile_learning.utils.utils_learning import load_json_obj
 from tactile_learning.utils.utils_plots import LearningPlotter
 from tactile_servo_control import BASE_MODEL_PATH
 
@@ -35,44 +35,17 @@ def csv_row_to_label(row):
         }
 
 
-def get_pose_limits(data_dirs, save_dir):
-    """
-     Get limits for poses of data collected, used to encode/decode pose for prediction
-     data_dirs is expected to be a list of data directories
-
-     When using more than one data source, limits are taken at the extremes of those used for collection.
-    """
-    pose_llims, pose_ulims = [], []
-    for data_dir in data_dirs:
-        pose_params = load_json_obj(os.path.join(data_dir, 'pose_params'))
-        pose_llims.append(pose_params['pose_llims'])
-        pose_ulims.append(pose_params['pose_ulims'])
-
-    pose_llims = np.min(pose_llims, axis=0)
-    pose_ulims = np.max(pose_ulims, axis=0)
-
-    # save limits
-    pose_limits = {
-        'pose_llims': list(pose_llims*1.0),
-        'pose_ulims': list(pose_ulims*1.0),
-    }
-
-    save_json_obj(pose_limits, os.path.join(save_dir, 'pose_params'))
-
-    return pose_llims, pose_ulims
-
-
 class PoseEncoder:
 
-    def __init__(self, target_label_names, pose_limits, device):
+    def __init__(self, target_label_names, pose_llims, pose_ulims, device, **kwargs):
         self.device = device
         self.target_label_names = target_label_names
 
         # create tensors for pose limits
-        self.pose_llims_np = np.array(pose_limits[0])
-        self.pose_ulims_np = np.array(pose_limits[1])
-        self.pose_llims_torch = torch.from_numpy(np.array(pose_limits[0])).float().to(self.device)
-        self.pose_ulims_torch = torch.from_numpy(np.array(pose_limits[1])).float().to(self.device)
+        self.pose_llims_np = np.array(pose_llims)
+        self.pose_ulims_np = np.array(pose_ulims)
+        self.pose_llims_torch = torch.from_numpy(np.array(pose_llims)).float().to(self.device)
+        self.pose_ulims_torch = torch.from_numpy(np.array(pose_ulims)).float().to(self.device)
 
     def encode_label(self, labels_dict):
         """

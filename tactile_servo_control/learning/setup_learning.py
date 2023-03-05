@@ -1,34 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import pandas as pd
+import numpy as np
 
-from tactile_learning.utils.utils_learning import save_json_obj
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-t', '--tasks',
-        nargs='+',
-        help="Choose task from ['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d'].",
-        default=['edge_2d']
-    )
-    parser.add_argument(
-        '-m', '--models',
-        nargs='+',
-        help="Choose model from ['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit'].",
-        default=['simple_cnn']
-    )
-    parser.add_argument(
-        '-d', '--device',
-        type=str,
-        help="Choose device from ['cpu', 'cuda'].",
-        default='cuda'
-    )
-
-    # parse arguments
-    args = parser.parse_args()
-    return args
+from tactile_learning.utils.utils_learning import load_json_obj, save_json_obj
 
 
 def setup_learning(save_dir=None):
@@ -127,7 +102,7 @@ def setup_model(model_type, save_dir=None):
     return model_params
 
 
-def setup_task(task_name, save_dir=None):
+def setup_task(task_name, data_dirs, save_dir=None):
     """
     Returns task specific details.
     """
@@ -137,16 +112,24 @@ def setup_task(task_name, save_dir=None):
         data = [
                   ['surface_2d', 3,        ['y', 'Rz']],
                   ['surface_3d', 5,        ['z', 'Rx', 'Ry']],
-                  ['edge_2d',    3,        ['y', 'Rz']],
-                  ['edge_3d',    4,        ['y', 'z', 'Rz']],
-                  ['edge_5d',    8,        ['y', 'z', 'Rx', 'Ry', 'Rz']],
+                  ['edge_2d',    3,        ['x', 'Rz']],
+                  ['edge_3d',    4,        ['x', 'z', 'Rz']],
+                  ['edge_5d',    8,        ['x', 'z', 'Rx', 'Ry', 'Rz']],
         ]
     )
+
+    pose_llims, pose_ulims = [], []
+    for data_dir in data_dirs:
+        pose_params = load_json_obj(os.path.join(data_dir, 'pose_params'))
+        pose_llims.append(pose_params['pose_llims'])
+        pose_ulims.append(pose_params['pose_ulims'])
 
     query_str = f"task_name=='{task_name}'"
     task_params = {
         'out_dim':     task_params_df.query(query_str)['out_dim'].iloc[0].item(),
         'label_names': task_params_df.query(query_str)['label_names'].iloc[0],
+        'pose_llims': np.min(pose_llims, axis=0),
+        'pose_ulims': np.max(pose_ulims, axis=0)
     }
 
     # save parameters

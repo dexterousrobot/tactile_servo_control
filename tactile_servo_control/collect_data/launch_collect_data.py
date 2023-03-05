@@ -21,8 +21,8 @@ collect_params = {
 def launch():
 
     tasks, robot = setup_parse({
-        'tasks':  [['edge_2d'], "[surface_3d edge_2d edge_3d edge_5d]"],
-        'robot':  ['CR',       "Sim, MG400, CR"],
+        'tasks':  [['edge_2d'],   "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'robot':  ['CR',          "['Sim', 'MG400', 'CR']"],
     })
     
     for task in tasks:
