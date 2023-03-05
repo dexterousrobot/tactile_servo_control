@@ -10,26 +10,26 @@ from tactile_image_processing.image_transforms import process_image
 
 
 tasks = ['edge_2d']#, 'surface_2d']
-reality = 'real'
+robot = 'Sim'
 
 # define split
-indir_name = "data_CR"
-outdir_names = ["train_CR", "val_CR"]
+indir_name = "data"
+outdir_names = ["train", "val"]
 split = 0.8
 
 # optional image processing
-sensor_params = {
-    'thresh': True,
-    'dims': (128,128),
-    "circle_mask_radius": 220,
-    "bbox": [10, 10, 430, 430]
-    # "bbox": [10, 10, 310, 310]
-    }
+# sensor_params = {
+#     'thresh': True,
+#     'dims': (128,128),
+#     "circle_mask_radius": 220,
+#     "bbox": [10, 10, 430, 430]
+#     # "bbox": [10, 10, 310, 310]
+#     }
 
 for task in tasks:
 
     # load target df
-    targets_df = pd.read_csv(os.path.join(BASE_DATA_PATH, reality, task, indir_name, 'targets.csv'))
+    targets_df = pd.read_csv(os.path.join(BASE_DATA_PATH, robot, task, indir_name, 'targets.csv'))
 
     # Select data
     np.random.seed(0) # make predictable
@@ -39,8 +39,8 @@ for task in tasks:
     # iterate over split
     for outdir_name, ind in zip(outdir_names, inds):
 
-        indir = os.path.join(BASE_DATA_PATH, reality, task, indir_name)
-        outdir = os.path.join(BASE_DATA_PATH, reality, task, outdir_name)
+        indir = os.path.join(BASE_DATA_PATH, robot, task, indir_name)
+        outdir = os.path.join(BASE_DATA_PATH, robot, task, outdir_name)
 
         # check save dir exists
         check_dir(outdir)

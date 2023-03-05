@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import torch
 
-from tactile_learning.utils.utils_learning import load_json_obj
 from tactile_learning.utils.utils_plots import LearningPlotter
 from tactile_servo_control import BASE_MODEL_PATH
 
@@ -37,15 +36,26 @@ def csv_row_to_label(row):
 
 class PoseEncoder:
 
-    def __init__(self, target_label_names, pose_llims, pose_ulims, device, **kwargs):
+    def __init__(self, 
+                 label_names, 
+                 pose_llims, 
+                 pose_ulims, 
+                 device='cuda'
+        ):
         self.device = device
-        self.target_label_names = target_label_names
+        self.label_names = label_names
 
         # create tensors for pose limits
         self.pose_llims_np = np.array(pose_llims)
         self.pose_ulims_np = np.array(pose_ulims)
         self.pose_llims_torch = torch.from_numpy(np.array(pose_llims)).float().to(self.device)
         self.pose_ulims_torch = torch.from_numpy(np.array(pose_ulims)).float().to(self.device)
+
+    @property
+    def out_dim(self):
+        label_dims = [self.label_names.count(p) for p in POS_LABEL_NAMES] \
+                    + [2*self.label_names.count(p) for p in ROT_LABEL_NAMES]
+        return sum(label_dims)
 
     def encode_label(self, labels_dict):
         """
@@ -57,7 +67,7 @@ class PoseEncoder:
 
         # encode pose to predictable label
         encoded_pose = []
-        for label_name in self.target_label_names:
+        for label_name in self.label_names:
 
             # get the target from the dict
             target = labels_dict[label_name].float().to(self.device)
@@ -99,7 +109,7 @@ class PoseEncoder:
         }
 
         label_name_idx = 0
-        for label_name in self.target_label_names:
+        for label_name in self.label_names:
 
             if label_name in POS_LABEL_NAMES:
                 predictions = outputs[:, label_name_idx].detach().cpu()
@@ -138,7 +148,7 @@ class PoseEncoder:
         Position error (mm), Rotation error (degrees).
         """
         err_df = pd.DataFrame(columns=POSE_LABEL_NAMES)
-        for label_name in self.target_label_names:
+        for label_name in self.label_names:
 
             if label_name in POS_LABEL_NAMES:
                 abs_err = torch.abs(
@@ -168,7 +178,7 @@ class PoseEncoder:
         batch_size = err_df.shape[0]
         acc_df = pd.DataFrame(columns=[*POSE_LABEL_NAMES, 'overall_acc'])
         overall_correct = np.ones(batch_size, dtype=bool)
-        for label_name in self.target_label_names:
+        for label_name in self.label_names:
 
             if label_name in POS_LABEL_NAMES:
                 abs_err = err_df[label_name]
@@ -190,12 +200,12 @@ class PoseEncoder:
 class ErrorPlotter:
     def __init__(
         self,
-        target_label_names,
+        label_names,
         save_dir=None,
         plot_during_training=False,
         name="error_plot.png"
     ):
-        self._target_label_names = target_label_names
+        self._label_names = label_names
         self._save_dir = save_dir
         self._name = name
         self.plot_during_training = plot_during_training
@@ -222,7 +232,7 @@ class ErrorPlotter:
             pose_label = POSE_LABEL_NAMES[i]
 
             # skip labels we are not actively trying to predict
-            if pose_label not in self._target_label_names:
+            if pose_label not in self._label_names:
                 continue
 
             # sort all dfs by target
@@ -300,7 +310,7 @@ if __name__ == '__main__':
     with open(os.path.join(save_dir, 'val_pred_targ_err.pkl'), 'rb') as f:
         pred_df, targ_df, err_df, label_names = pickle.load(f)
 
-    error_plotter = ErrorPlotter(save_dir=save_dir, target_label_names=label_names, name='val_error_plot.png')
+    error_plotter = ErrorPlotter(save_dir=save_dir, label_names=label_names, name='val_error_plot.png')
     error_plotter.final_plot(pred_df, targ_df, err_df)
 
     # load and plot training

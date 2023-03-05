@@ -6,7 +6,7 @@ import numpy as np
 from tactile_learning.utils.utils_learning import load_json_obj, save_json_obj
 
 
-def setup_learning(save_dir=None):
+def setup_learning(data_dirs, save_dir=None):
 
     # Parameters
     learning_params = {
@@ -38,12 +38,15 @@ def setup_learning(save_dir=None):
         'noise_var': None,
     }
 
+    sensor_params = load_json_obj(os.path.join(data_dirs[0], 'sensor_params'))
+    sensor_params['image_processing'] = image_processing_params
+    sensor_params['augmentation'] = augmentation_params
+
     if save_dir:
         save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
-        save_json_obj(image_processing_params, os.path.join(save_dir, 'image_processing_params'))
-        save_json_obj(augmentation_params, os.path.join(save_dir, 'augmentation_params'))
+        save_json_obj(sensor_params, os.path.join(save_dir, 'sensor_params'))
 
-    return learning_params, image_processing_params, augmentation_params
+    return learning_params, sensor_params
 
 
 def setup_model(model_type, save_dir=None):
@@ -108,13 +111,13 @@ def setup_task(task_name, data_dirs, save_dir=None):
     """
 
     task_params_df = pd.DataFrame(
-        columns = ['task_name', 'out_dim', 'label_names'],
+        columns = ['task_name', 'label_names'],
         data = [
-                  ['surface_2d', 3,        ['y', 'Rz']],
-                  ['surface_3d', 5,        ['z', 'Rx', 'Ry']],
-                  ['edge_2d',    3,        ['x', 'Rz']],
-                  ['edge_3d',    4,        ['x', 'z', 'Rz']],
-                  ['edge_5d',    8,        ['x', 'z', 'Rx', 'Ry', 'Rz']],
+                  ['surface_2d', ['y', 'Rz']],
+                  ['surface_3d', ['z', 'Rx', 'Ry']],
+                  ['edge_2d',    ['x', 'Rz']],
+                  ['edge_3d',    ['x', 'z', 'Rz']],
+                  ['edge_5d',    ['x', 'z', 'Rx', 'Ry', 'Rz']],
         ]
     )
 
@@ -126,10 +129,9 @@ def setup_task(task_name, data_dirs, save_dir=None):
 
     query_str = f"task_name=='{task_name}'"
     task_params = {
-        'out_dim':     task_params_df.query(query_str)['out_dim'].iloc[0].item(),
         'label_names': task_params_df.query(query_str)['label_names'].iloc[0],
-        'pose_llims': np.min(pose_llims, axis=0),
-        'pose_ulims': np.max(pose_ulims, axis=0)
+        'pose_llims': tuple(np.min(pose_llims, axis=0)),
+        'pose_ulims': tuple(np.max(pose_ulims, axis=0))
     }
 
     # save parameters

@@ -1,11 +1,8 @@
-<<<<<<< HEAD
 # -*- coding: utf-8 -*-
 """
 python demo_image_generation.py -t surface_3d edge_2d edge_3d edge_5d
 """
 
-=======
->>>>>>> upstream/main
 import os
 
 from tactile_servo_control.learning.setup_learning import parse_args

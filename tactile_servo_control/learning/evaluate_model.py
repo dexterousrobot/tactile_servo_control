@@ -18,15 +18,19 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 def evaluate_model(
-    task,
     model,
     label_encoder,
-    generator,
-    learning_params,
-    save_dir,
+    val_data_dirs,
     error_plotter,
+    learning_params,
     device='cpu'
 ):
+
+    generator = ImageDataGenerator(
+        data_dirs=val_data_dirs,
+        csv_row_to_label=csv_row_to_label,
+        **sensor_params['image_processing']
+    )
 
     loader = torch.utils.data.DataLoader(
         generator,
@@ -36,13 +40,13 @@ def evaluate_model(
     )
 
     # complete dateframe of predictions and targets
-    target_label_names = label_encoder.target_label_names
+    target_label_names = label_encoder.label_names
     acc_df = pd.DataFrame(columns=[*target_label_names, 'overall_acc'])
     err_df = pd.DataFrame(columns=target_label_names)
     pred_df = pd.DataFrame(columns=target_label_names)
     targ_df = pd.DataFrame(columns=target_label_names)
 
-    for i, batch in enumerate(loader):
+    for _, batch in enumerate(loader):
 
         # get inputs
         inputs, labels_dict = batch['images'], batch['labels']
@@ -92,67 +96,54 @@ if __name__ == "__main__":
     input_args = {
         'tasks':   [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
         'models':  [['simple_cnn'], "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
-        'robot':   ['CR',           "['Sim', 'MG400', 'CR']"],
+        'robot':   ['Sim',           "['Sim', 'MG400', 'CR']"],
         'device':  ['cuda',         "['cpu', 'cuda']"],
     }
-    tasks, model_types, reality, device = setup_parse(input_args)
+    tasks, model_types, robot, device = setup_parse(input_args)
 
     # test the trained networks
     for model_type in model_types:
         for task in tasks:
 
-            # task specific parameters
-            out_dim, label_names = setup_task(task)
-
             # set save dir
-            save_dir = os.path.join(BASE_MODEL_PATH, task, model_type)
-
+            save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type)
+            
             # setup parameters
+            task_params = load_json_obj(os.path.join(save_dir, 'task_params'))
             model_params = load_json_obj(os.path.join(save_dir, 'model_params'))
+            sensor_params = load_json_obj(os.path.join(save_dir, 'sensor_params'))
             learning_params = load_json_obj(os.path.join(save_dir, 'learning_params'))
-            image_processing_params = load_json_obj(os.path.join(save_dir, 'image_processing_params'))
 
-            # get the pose limits used for encoding/decoding pose/predictions
-            pose_params = load_json_obj(os.path.join(save_dir, 'pose_params'))
-            pose_limits = [pose_params['pose_llims'], pose_params['pose_ulims']]
-
-            # create the model
-            model = create_model(
-                in_dim=image_processing_params['dims'],
-                in_channels=1,
-                out_dim=out_dim,
-                model_params=model_params,
-                device=device
-            )
-
-            model.eval()
-
-            val_data_dirs = [
-                os.path.join(BASE_DATA_PATH, task, 'val')
-            ]
-            val_generator = ImageDataGenerator(
-                data_dirs=val_data_dirs,
-                csv_row_to_label=csv_row_to_label,
-                **image_processing_params
-            )
-            # create the encoder/decoder for labels
-            label_encoder = PoseEncoder(label_names, pose_limits, device)
+            # create the encoder/decoder for pose labels
+            label_encoder = PoseEncoder(**task_params, device=device)
 
             # create plotter for pose error
             error_plotter = ErrorPlotter(
-                target_label_names=label_names,
-                save_dir=save_dir,
+                task_params['label_names'],
+                save_dir,
                 name='error_plot.png',
                 plot_during_training=False
             )
 
+            # create the model
+            model = create_model(
+                in_dim=sensor_params['image_processing']['dims'],
+                in_channels=1,
+                out_dim=label_encoder.out_dim,
+                model_params=model_params,
+                device=device
+            )
+            model.eval()
+
+            val_data_dirs = [
+                os.path.join(BASE_DATA_PATH, robot, task, 'val')
+            ]
+
             evaluate_model(
-                task,
                 model,
                 label_encoder,
-                val_generator,
-                learning_params,
-                save_dir,
+                val_data_dirs,
                 error_plotter,
+                learning_params,
                 device=device
             )

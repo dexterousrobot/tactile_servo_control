@@ -11,6 +11,7 @@ from torch.autograd import Variable
 import torch.optim as optim
 import torch.nn as nn
 import torch
+from utils_learning import csv_row_to_label
 # from torch.utils.tensorboard import SummaryWriter
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -21,10 +22,8 @@ def train_model(
     label_encoder,
     train_data_dirs,
     val_data_dirs,
-    csv_row_to_label,
     learning_params,
-    image_processing_params,
-    augmentation_params,
+    sensor_params,
     save_dir,
     error_plotter=None,
     calculate_train_metrics=False,
@@ -37,12 +36,12 @@ def train_model(
     train_generator = ImageDataGenerator(
         data_dirs=train_data_dirs,
         csv_row_to_label=csv_row_to_label,
-        **{**image_processing_params, **augmentation_params}
+        **{**sensor_params['image_processing'], **sensor_params['augmentation']}
     )
     val_generator = ImageDataGenerator(
         data_dirs=val_data_dirs,
         csv_row_to_label=csv_row_to_label,
-        **image_processing_params
+        **sensor_params['image_processing']
     )
 
     train_loader = torch.utils.data.DataLoader(
@@ -83,7 +82,7 @@ def train_model(
             return param_group['lr']
 
     # for convenience
-    target_label_names = label_encoder.target_label_names
+    target_label_names = label_encoder.label_names
 
     def run_epoch(loader, n_batches, training=True):
 
