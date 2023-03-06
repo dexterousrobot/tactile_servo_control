@@ -22,7 +22,7 @@ def setup_control_params(task, save_dir=None):
 
     elif task == 'edge_2d':
         control_params = {
-            'ep_len': 100,#60,
+            'ep_len': 50,
             'pid_params': {
                 'kp': [0.5, 1, 0, 0, 0, 0.5],                 
                 'ki': [0.3, 0, 0, 0, 0, 0.1],                

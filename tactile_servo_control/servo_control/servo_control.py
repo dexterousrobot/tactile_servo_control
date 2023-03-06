@@ -32,7 +32,7 @@ def servo_control(
     pose = [0, 0, 0, 0, 0, 0]
 
     # move to initial pose from 50mm above workframe
-    embodiment.move_linear((0, 0, -50, 0, 0, 0))
+    embodiment.move_linear((0, 0, 50, 0, 0, 0))
     embodiment.move_linear(pose)
 
     # iterate through servo control
@@ -70,7 +70,7 @@ def servo_control(
         # embodiment.controller._client._sim_env.arm.draw_TCP(lifetime=10.0)
 
     # finish 50mm above initial pose and zero joint_6
-    embodiment.move_linear((0, 0, -50, 0, 0, 0))
+    embodiment.move_linear((0, 0, 50, 0, 0, 0))
     embodiment.move_joints((*embodiment.joint_angles[:-1], 0))
     embodiment.close()
 
