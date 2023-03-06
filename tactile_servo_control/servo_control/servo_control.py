@@ -3,7 +3,7 @@ import os
 import imageio
 import numpy as np
 
-from cri.transforms import inv_transform_pose
+from cri.transforms import inv_transform_euler
 from tactile_servo_control.utils.controller import PIDController
 from user_input.slider import Slider
 from utils_servo_control import PlotContour3D as PlotContour
@@ -49,7 +49,7 @@ def servo_control(
         servo = controller.update(pred_pose, ref_pose)
         
         # new pose applies servo to end effector pose 
-        pose = inv_transform_pose(servo, embodiment.pose)
+        pose = inv_transform_euler(servo, embodiment.pose)
 
         # move to new pose
         embodiment.move_linear(pose)

@@ -10,25 +10,23 @@ import matplotlib.pylab as plt
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-from cri.robot import quat2euler, euler2quat, inv_transform
-from tactile_servo_control.learning.utils_learning import PoseEncoder, POSE_LABEL_NAMES
+from cri.transforms import quat2euler, euler2quat, inv_transform
+from tactile_servo_control.learning.utils_learning import POSE_LABEL_NAMES
 from tactile_image_processing.image_transforms import process_image
+
 
 class PoseModel:
     def __init__(self,
         model, 
         image_processing_params, 
-        pose_params, 
-        label_names, 
+        label_encoder,
         device='cpu'
     ):
         self.model = model
         self.image_processing_params = image_processing_params
-        self.label_names = label_names 
+        self.pose_encoder = label_encoder 
+        self.label_names = label_encoder.target_label_names
         self.device = device
-
-        pose_limits = [pose_params['pose_llims'], pose_params['pose_ulims']]
-        self.pose_encoder = PoseEncoder(label_names, pose_limits, device)
 
     def predict(self, tactile_image):
 

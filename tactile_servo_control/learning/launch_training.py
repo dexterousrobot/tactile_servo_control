@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python launch_training.py -r Sim -m simple_cnn -t surface_3d edge_2d edge_3d edge_5d
+python launch_training.py -r Sim -m simple_cnn -t edge_2d
 """
 import os
 
@@ -16,13 +16,15 @@ from tactile_learning.supervised.train_model_w_metrics import train_model_w_metr
 from tactile_servo_control.collect_data.utils_collect_data import setup_parse
 from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 
+model_version = ''
+
 
 def launch():
 
     input_args = {
-        'tasks':  [['edge_5d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'tasks':  [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
         'models': [['simple_cnn'], "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
-        'robot':  ['CR',           "['Sim', 'MG400', 'CR']"],
+        'robot':  ['Sim',           "['Sim', 'MG400', 'CR']"],
         'device': ['cuda',         "['cpu', 'cuda']"],
     }
     tasks, model_types, robot, device = setup_parse(input_args)
@@ -39,7 +41,7 @@ def launch():
             ]
 
             # setup save dir
-            save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type)
+            save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type + model_version)
             make_dir(save_dir)
             
             # setup parameters
@@ -55,7 +57,7 @@ def launch():
                 task_params['label_names'],
                 save_dir,
                 name='error_plot.png',
-                plot_during_training=True
+                plot_during_training=False
             )
 
             # create the model

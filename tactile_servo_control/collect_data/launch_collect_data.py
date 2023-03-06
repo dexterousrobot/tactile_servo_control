@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python launch_collect_data.py -r Sim -t surface_3d edge_2d edge_3d edge_5d
+python launch_collect_data.py -r Sim -t edge_2d
 """
 import os
 

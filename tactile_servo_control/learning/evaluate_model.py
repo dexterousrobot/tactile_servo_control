@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+"""
+python evaluate_model.py -r Sim -m simple_cnn -t edge_2d
+"""
 import os
 import pandas as pd
 from torch.autograd import Variable
@@ -12,6 +16,8 @@ from tactile_servo_control.collect_data.utils_collect_data import setup_parse
 from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+model_version = ''
 
 
 def evaluate_model(
@@ -37,7 +43,7 @@ def evaluate_model(
     pred_df = pd.DataFrame(columns=target_label_names)
     targ_df = pd.DataFrame(columns=target_label_names)
 
-    for i, batch in enumerate(loader):
+    for _, batch in enumerate(loader):
 
         # get inputs
         inputs, labels_dict = batch['images'], batch['labels']
@@ -86,9 +92,9 @@ if __name__ == "__main__":
     pass
 
     input_args = {
-        'tasks':  [['edge_5d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'tasks':  [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
         'models': [['simple_cnn'], "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
-        'robot':  ['CR',           "['Sim', 'MG400', 'CR']"],
+        'robot':  ['Sim',           "['Sim', 'MG400', 'CR']"],
         'device': ['cuda',         "['cpu', 'cuda']"],
     }
     tasks, model_types, robot, device = setup_parse(input_args)
@@ -102,7 +108,7 @@ if __name__ == "__main__":
             ]
 
             # set save dir
-            save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type)
+            save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type + model_version)
 
             # setup parameters
             task_params = load_json_obj(os.path.join(save_dir, 'task_params'))

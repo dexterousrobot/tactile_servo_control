@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+python utils_learning.py -r Sim -m simple_cnn -t edge_2d
+"""
 import os
 import pickle
 import matplotlib.pyplot as plt

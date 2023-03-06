@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+"""
+python demo_image_generation.py -r Sim -t edge_2d
+"""
 import os
 
 from setup_learning import setup_learning
