@@ -12,7 +12,7 @@ def setup_learning(data_dirs, save_dir=None):
     learning_params = {
         'seed': 42,
         'batch_size': 16,
-        'epochs': 50,
+        'epochs': 100,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -130,8 +130,8 @@ def setup_task(task_name, data_dirs, save_dir=None):
     query_str = f"task_name=='{task_name}'"
     task_params = {
         'label_names': task_params_df.query(query_str)['label_names'].iloc[0],
-        'pose_llims': tuple(np.min(pose_llims, axis=0)),
-        'pose_ulims': tuple(np.max(pose_ulims, axis=0))
+        'pose_llims': tuple(np.min(pose_llims, axis=0).astype(float)),
+        'pose_ulims': tuple(np.max(pose_ulims, axis=0).astype(float))
     }
 
     # save parameters

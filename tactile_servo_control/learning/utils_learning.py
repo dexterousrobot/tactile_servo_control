@@ -7,7 +7,9 @@ import numpy as np
 import pandas as pd
 import torch
 
+from tactile_servo_control.collect_data.utils_collect_data import setup_parse
 from tactile_learning.utils.utils_plots import LearningPlotter
+from tactile_learning.utils.utils_learning import load_json_obj
 from tactile_servo_control import BASE_MODEL_PATH
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -43,7 +45,7 @@ class PoseEncoder:
                  device='cuda'
         ):
         self.device = device
-        self.label_names = label_names
+        self.target_label_names = label_names
 
         # create tensors for pose limits
         self.pose_llims_np = np.array(pose_llims)
@@ -53,8 +55,8 @@ class PoseEncoder:
 
     @property
     def out_dim(self):
-        label_dims = [self.label_names.count(p) for p in POS_LABEL_NAMES] \
-                    + [2*self.label_names.count(p) for p in ROT_LABEL_NAMES]
+        label_dims = [self.target_label_names .count(p) for p in POS_LABEL_NAMES] \
+                    + [2*self.target_label_names .count(p) for p in ROT_LABEL_NAMES]
         return sum(label_dims)
 
     def encode_label(self, labels_dict):
@@ -67,7 +69,7 @@ class PoseEncoder:
 
         # encode pose to predictable label
         encoded_pose = []
-        for label_name in self.label_names:
+        for label_name in self.target_label_names:
 
             # get the target from the dict
             target = labels_dict[label_name].float().to(self.device)
@@ -109,7 +111,7 @@ class PoseEncoder:
         }
 
         label_name_idx = 0
-        for label_name in self.label_names:
+        for label_name in self.target_label_names :
 
             if label_name in POS_LABEL_NAMES:
                 predictions = outputs[:, label_name_idx].detach().cpu()
@@ -148,7 +150,7 @@ class PoseEncoder:
         Position error (mm), Rotation error (degrees).
         """
         err_df = pd.DataFrame(columns=POSE_LABEL_NAMES)
-        for label_name in self.label_names:
+        for label_name in self.target_label_names :
 
             if label_name in POS_LABEL_NAMES:
                 abs_err = torch.abs(
@@ -178,7 +180,7 @@ class PoseEncoder:
         batch_size = err_df.shape[0]
         acc_df = pd.DataFrame(columns=[*POSE_LABEL_NAMES, 'overall_acc'])
         overall_correct = np.ones(batch_size, dtype=bool)
-        for label_name in self.label_names:
+        for label_name in self.target_label_names :
 
             if label_name in POS_LABEL_NAMES:
                 abs_err = err_df[label_name]
@@ -202,12 +204,12 @@ class ErrorPlotter:
         self,
         label_names,
         save_dir=None,
+        name="error_plot.png",
         plot_during_training=False,
-        name="error_plot.png"
     ):
-        self._label_names = label_names
-        self._save_dir = save_dir
-        self._name = name
+        self.label_names = label_names
+        self.save_dir = save_dir
+        self.name = name
         self.plot_during_training = plot_during_training
 
         if plot_during_training:
@@ -232,7 +234,7 @@ class ErrorPlotter:
             pose_label = POSE_LABEL_NAMES[i]
 
             # skip labels we are not actively trying to predict
-            if pose_label not in self._label_names:
+            if pose_label not in self.label_names:
                 continue
 
             # sort all dfs by target
@@ -265,8 +267,8 @@ class ErrorPlotter:
             ax.text(0.05, 0.9, 'MAE = {:.4f}'.format(err_df[pose_label].mean()), transform=ax.transAxes)
             ax.grid(True)
 
-        if self._save_dir is not None:
-            save_file = os.path.join(self._save_dir, self._name)
+        if self.save_dir is not None:
+            save_file = os.path.join(self.save_dir, self.name)
             self._fig.savefig(save_file, dpi=320, pad_inches=0.01, bbox_inches='tight')
 
         self._fig.canvas.draw()
@@ -291,26 +293,27 @@ class ErrorPlotter:
 
 
 if __name__ == '__main__':
-
-    from setup_learning import setup_task
-
-    # task = 'surface_3d'
-    task = 'edge_2d'
-    # task = 'edge_3d'
-    # task = 'edge_5d'
-
-    out_dim, label_names = setup_task(task)
-
-    model = 'simple_cnn'
+ 
+    input_args = {
+        'task':  ['edge_5d',    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'model': ['posenet_cnn', "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
+        'robot':  ['CR',           "['Sim', 'MG400', 'CR']"],
+        'device': ['cuda',         "['cpu', 'cuda']"],
+    }
+    task, model_type, robot, device = setup_parse(input_args)
 
     # path to model for loading
-    save_dir = os.path.join(BASE_MODEL_PATH, 'sim', task, model)
+    save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type)
+
+    # create task params
+    task_params = load_json_obj(os.path.join(save_dir, 'task_params'))
+    label_names = task_params['label_names']
 
     # load and plot predictions
     with open(os.path.join(save_dir, 'val_pred_targ_err.pkl'), 'rb') as f:
         pred_df, targ_df, err_df, label_names = pickle.load(f)
 
-    error_plotter = ErrorPlotter(save_dir=save_dir, label_names=label_names, name='val_error_plot.png')
+    error_plotter = ErrorPlotter(label_names, save_dir, 'val_error_plot.png')
     error_plotter.final_plot(pred_df, targ_df, err_df)
 
     # load and plot training
