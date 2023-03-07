@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+"""
+python evaluate_model.py -r Sim -m simple_cnn -t edge_2d
+"""
 import os
 import pandas as pd
 from torch.autograd import Variable
@@ -7,25 +11,20 @@ from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.utils.utils_learning import load_json_obj
 
-from tactile_servo_control.learning.setup_learning import parse_args
-from tactile_servo_control.learning.setup_learning import setup_task
-from tactile_servo_control.learning.utils_plots import ErrorPlotter
-from tactile_servo_control.learning.utils_learning import PoseEncoder
-from tactile_servo_control.learning.utils_learning import csv_row_to_label
-
-from tactile_servo_control import BASE_DATA_PATH
-from tactile_servo_control import BASE_MODEL_PATH
+from utils_learning import PoseEncoder, ErrorPlotter, csv_row_to_label
+from tactile_servo_control.collect_data.utils_collect_data import setup_parse
+from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+model_version = ''
+
 
 def evaluate_model(
-    task,
     model,
     label_encoder,
     generator,
     learning_params,
-    save_dir,
     error_plotter,
     device='cpu'
 ):
@@ -44,7 +43,7 @@ def evaluate_model(
     pred_df = pd.DataFrame(columns=target_label_names)
     targ_df = pd.DataFrame(columns=target_label_names)
 
-    for i, batch in enumerate(loader):
+    for _, batch in enumerate(loader):
 
         # get inputs
         inputs, labels_dict = batch['images'], batch['labels']
@@ -90,69 +89,64 @@ def evaluate_model(
 
 
 if __name__ == "__main__":
+    pass
 
-    # parse arguments
-    args = parse_args()
-    tasks = args.tasks
-    models = args.models
-    device = args.device
+    input_args = {
+        'tasks':  [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'models': [['simple_cnn'], "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
+        'robot':  ['Sim',           "['Sim', 'MG400', 'CR']"],
+        'device': ['cuda',         "['cpu', 'cuda']"],
+    }
+    tasks, model_types, robot, device = setup_parse(input_args)
 
     # test the trained networks
-    for model_type in models:
+    for model_type in model_types:
         for task in tasks:
 
-            # task specific parameters
-            out_dim, label_names = setup_task(task)
+            val_data_dirs = [
+                os.path.join(BASE_DATA_PATH, robot, task, 'val')
+            ]
 
             # set save dir
-            save_dir = os.path.join(BASE_MODEL_PATH, task, model_type)
+            save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type + model_version)
 
             # setup parameters
+            task_params = load_json_obj(os.path.join(save_dir, 'task_params'))
             model_params = load_json_obj(os.path.join(save_dir, 'model_params'))
             learning_params = load_json_obj(os.path.join(save_dir, 'learning_params'))
-            image_processing_params = load_json_obj(os.path.join(save_dir, 'image_processing_params'))
+            sensor_params = load_json_obj(os.path.join(save_dir, 'sensor_params'))
 
-            # get the pose limits used for encoding/decoding pose/predictions
-            pose_params = load_json_obj(os.path.join(save_dir, 'pose_params'))
-            pose_limits = [pose_params['pose_llims'], pose_params['pose_ulims']]
-
+            # create the label encoder/decoder
+            label_encoder = PoseEncoder(**task_params, device=device)
+            
+            # create plotter of prediction errors
+            error_plotter = ErrorPlotter(
+                task_params['label_names'],
+                save_dir,
+                name='evaluation_error_plot.png'
+            )
+            
             # create the model
             model = create_model(
-                in_dim=image_processing_params['dims'],
+                in_dim=sensor_params['image_processing']['dims'],
                 in_channels=1,
-                out_dim=out_dim,
+                out_dim=label_encoder.out_dim,
                 model_params=model_params,
                 device=device
             )
-
             model.eval()
 
-            val_data_dirs = [
-                os.path.join(BASE_DATA_PATH, task, 'val')
-            ]
             val_generator = ImageDataGenerator(
                 data_dirs=val_data_dirs,
                 csv_row_to_label=csv_row_to_label,
-                **image_processing_params
-            )
-            # create the encoder/decoder for labels
-            label_encoder = PoseEncoder(label_names, pose_limits, device)
-
-            # create plotter for pose error
-            error_plotter = ErrorPlotter(
-                target_label_names=label_names,
-                save_dir=save_dir,
-                name='error_plot.png',
-                plot_during_training=False
+                **sensor_params['image_processing']
             )
 
             evaluate_model(
-                task,
                 model,
                 label_encoder,
                 val_generator,
                 learning_params,
-                save_dir,
                 error_plotter,
                 device=device
             )

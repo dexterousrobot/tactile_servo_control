@@ -1,9 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+python utils_learning.py -r Sim -m simple_cnn -t edge_2d
+"""
 import os
+import pickle
+import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import pandas as pd
 import torch
 
-from tactile_learning.utils.utils_learning import save_json_obj, load_json_obj
+from tactile_servo_control.collect_data.utils_collect_data import setup_parse
+from tactile_learning.utils.utils_plots import LearningPlotter
+from tactile_learning.utils.utils_learning import load_json_obj
+from tactile_servo_control import BASE_MODEL_PATH
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+sns.set_theme(style="darkgrid")
 
 # tolerances for accuracy metrics
 POS_TOL = 0.25  # mm
@@ -26,44 +39,28 @@ def csv_row_to_label(row):
         }
 
 
-def get_pose_limits(data_dirs, save_dir):
-    """
-     Get limits for poses of data collected, used to encode/decode pose for prediction
-     data_dirs is expected to be a list of data directories
-
-     When using more than one data source, limits are taken at the extremes of those used for collection.
-    """
-    pose_llims, pose_ulims = [], []
-    for data_dir in data_dirs:
-        pose_params = load_json_obj(os.path.join(data_dir, 'pose_params'))
-        pose_llims.append(pose_params['pose_llims'])
-        pose_ulims.append(pose_params['pose_ulims'])
-
-    pose_llims = np.min(pose_llims, axis=0)
-    pose_ulims = np.max(pose_ulims, axis=0)
-
-    # save limits
-    pose_limits = {
-        'pose_llims': list(pose_llims*1.0),
-        'pose_ulims': list(pose_ulims*1.0),
-    }
-
-    save_json_obj(pose_limits, os.path.join(save_dir, 'pose_params'))
-
-    return pose_llims, pose_ulims
-
-
 class PoseEncoder:
 
-    def __init__(self, target_label_names, pose_limits, device):
+    def __init__(self, 
+                 label_names, 
+                 pose_llims, 
+                 pose_ulims, 
+                 device='cuda'
+        ):
         self.device = device
-        self.target_label_names = target_label_names
+        self.target_label_names = label_names
 
         # create tensors for pose limits
-        self.pose_llims_np = np.array(pose_limits[0])
-        self.pose_ulims_np = np.array(pose_limits[1])
-        self.pose_llims_torch = torch.from_numpy(np.array(pose_limits[0])).float().to(self.device)
-        self.pose_ulims_torch = torch.from_numpy(np.array(pose_limits[1])).float().to(self.device)
+        self.pose_llims_np = np.array(pose_llims)
+        self.pose_ulims_np = np.array(pose_ulims)
+        self.pose_llims_torch = torch.from_numpy(np.array(pose_llims)).float().to(self.device)
+        self.pose_ulims_torch = torch.from_numpy(np.array(pose_ulims)).float().to(self.device)
+
+    @property
+    def out_dim(self):
+        label_dims = [self.target_label_names .count(p) for p in POS_LABEL_NAMES] \
+                    + [2*self.target_label_names .count(p) for p in ROT_LABEL_NAMES]
+        return sum(label_dims)
 
     def encode_label(self, labels_dict):
         """
@@ -117,7 +114,7 @@ class PoseEncoder:
         }
 
         label_name_idx = 0
-        for label_name in self.target_label_names:
+        for label_name in self.target_label_names :
 
             if label_name in POS_LABEL_NAMES:
                 predictions = outputs[:, label_name_idx].detach().cpu()
@@ -156,7 +153,7 @@ class PoseEncoder:
         Position error (mm), Rotation error (degrees).
         """
         err_df = pd.DataFrame(columns=POSE_LABEL_NAMES)
-        for label_name in self.target_label_names:
+        for label_name in self.target_label_names :
 
             if label_name in POS_LABEL_NAMES:
                 abs_err = torch.abs(
@@ -186,7 +183,7 @@ class PoseEncoder:
         batch_size = err_df.shape[0]
         acc_df = pd.DataFrame(columns=[*POSE_LABEL_NAMES, 'overall_acc'])
         overall_correct = np.ones(batch_size, dtype=bool)
-        for label_name in self.target_label_names:
+        for label_name in self.target_label_names :
 
             if label_name in POS_LABEL_NAMES:
                 abs_err = err_df[label_name]
@@ -203,3 +200,128 @@ class PoseEncoder:
         acc_df['overall_acc'] = overall_correct.astype(np.float32)
 
         return acc_df
+
+
+class ErrorPlotter:
+    def __init__(
+        self,
+        label_names,
+        save_dir=None,
+        name="error_plot.png",
+        plot_during_training=False,
+    ):
+        self.label_names = label_names
+        self.save_dir = save_dir
+        self.name = name
+        self.plot_during_training = plot_during_training
+
+        if plot_during_training:
+            plt.ion()
+            self._fig, self._axs = plt.subplots(2, 3, figsize=(12, 7))
+            self._fig.subplots_adjust(wspace=0.3)
+
+    def update(
+        self,
+        pred_df,
+        targ_df,
+        err_df,
+    ):
+
+        for ax in self._axs.flat:
+            ax.clear()
+
+        n_smooth = int(pred_df.shape[0] / 20)
+
+        for i, ax in enumerate(self._axs.flat):
+
+            pose_label = POSE_LABEL_NAMES[i]
+
+            # skip labels we are not actively trying to predict
+            if pose_label not in self.label_names:
+                continue
+
+            # sort all dfs by target
+            targ_df = targ_df.sort_values(by=pose_label)
+
+            pred_df = pred_df.assign(temp=targ_df[pose_label])
+            pred_df = pred_df.sort_values(by='temp')
+            pred_df = pred_df.drop('temp', axis=1)
+
+            err_df = err_df.assign(temp=targ_df[pose_label])
+            err_df = err_df.sort_values(by='temp')
+            err_df = err_df.drop('temp', axis=1)
+
+            ax.scatter(
+                targ_df[pose_label], pred_df[pose_label], s=1,
+                c=err_df[pose_label], cmap="inferno"
+            )
+            ax.plot(
+                targ_df[pose_label].rolling(n_smooth).mean(),
+                pred_df[pose_label].rolling(n_smooth).mean(),
+                linewidth=2, c='r'
+            )
+            ax.set(xlabel=f"target {pose_label}", ylabel=f"predicted {pose_label}")
+
+            pose_llim = np.round(min(targ_df[pose_label]))
+            pose_ulim = np.round(max(targ_df[pose_label]))
+            ax.set_xlim(pose_llim, pose_ulim)
+            ax.set_ylim(pose_llim, pose_ulim)
+
+            ax.text(0.05, 0.9, 'MAE = {:.4f}'.format(err_df[pose_label].mean()), transform=ax.transAxes)
+            ax.grid(True)
+
+        if self.save_dir is not None:
+            save_file = os.path.join(self.save_dir, self.name)
+            self._fig.savefig(save_file, dpi=320, pad_inches=0.01, bbox_inches='tight')
+
+        self._fig.canvas.draw()
+        plt.pause(0.01)
+
+    def final_plot(
+        self,
+        pred_df,
+        targ_df,
+        err_df,
+    ):
+        if not self.plot_during_training:
+            self._fig, self._axs = plt.subplots(2, 3, figsize=(12, 7))
+            self._fig.subplots_adjust(wspace=0.3)
+
+        self.update(
+            pred_df,
+            targ_df,
+            err_df
+        )
+        plt.show()
+
+
+if __name__ == '__main__':
+ 
+    input_args = {
+        'task':  ['edge_5d',    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'model': ['posenet_cnn', "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
+        'robot':  ['CR',           "['Sim', 'MG400', 'CR']"],
+        'device': ['cuda',         "['cpu', 'cuda']"],
+    }
+    task, model_type, robot, device = setup_parse(input_args)
+
+    # path to model for loading
+    save_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type)
+
+    # create task params
+    task_params = load_json_obj(os.path.join(save_dir, 'task_params'))
+    label_names = task_params['label_names']
+
+    # load and plot predictions
+    with open(os.path.join(save_dir, 'val_pred_targ_err.pkl'), 'rb') as f:
+        pred_df, targ_df, err_df, label_names = pickle.load(f)
+
+    error_plotter = ErrorPlotter(label_names, save_dir, 'val_error_plot.png')
+    error_plotter.final_plot(pred_df, targ_df, err_df)
+
+    # load and plot training
+    with open(os.path.join(save_dir, 'train_val_loss_acc.pkl'), 'rb') as f:
+        train_loss, val_loss, train_acc, val_acc = pickle.load(f)
+
+    learning_plotter = LearningPlotter(save_dir=save_dir)
+    learning_plotter.final_plot(train_loss, val_loss, train_acc, val_acc)

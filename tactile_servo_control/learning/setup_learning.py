@@ -1,42 +1,18 @@
+# -*- coding: utf-8 -*-
 import os
-import argparse
+import pandas as pd
+import numpy as np
 
-from tactile_learning.utils.utils_learning import save_json_obj
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-t', '--tasks',
-        nargs='+',
-        help="Choose task from ['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d'].",
-        default=['edge_2d']
-    )
-    parser.add_argument(
-        '-m', '--models',
-        nargs='+',
-        help="Choose model from ['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit'].",
-        default=['simple_cnn']
-    )
-    parser.add_argument(
-        '-d', '--device',
-        type=str,
-        help="Choose device from ['cpu', 'cuda'].",
-        default='cuda'
-    )
-
-    # parse arguments
-    args = parser.parse_args()
-    return args
+from tactile_learning.utils.utils_learning import load_json_obj, save_json_obj
 
 
-def setup_learning(save_dir=None):
+def setup_learning(data_dirs, save_dir=None):
 
     # Parameters
     learning_params = {
         'seed': 42,
         'batch_size': 16,
-        'epochs': 100,
+        'epochs': 50,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -44,7 +20,7 @@ def setup_learning(save_dir=None):
         'adam_b1': 0.9,
         'adam_b2': 0.999,
         'shuffle': True,
-        'n_cpu': 8,
+        'n_cpu': 1,
     }
 
     image_processing_params = {
@@ -62,15 +38,18 @@ def setup_learning(save_dir=None):
         'noise_var': None,
     }
 
+    sensor_params = load_json_obj(os.path.join(data_dirs[0], 'sensor_params'))
+    sensor_params['image_processing'] = image_processing_params
+    sensor_params['augmentation'] = augmentation_params
+
     if save_dir:
         save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
-        save_json_obj(image_processing_params, os.path.join(save_dir, 'image_processing_params'))
-        save_json_obj(augmentation_params, os.path.join(save_dir, 'augmentation_params'))
+        save_json_obj(sensor_params, os.path.join(save_dir, 'sensor_params'))
 
-    return learning_params, image_processing_params, augmentation_params
+    return learning_params, sensor_params
 
 
-def setup_model(model_type, save_dir):
+def setup_model(model_type, save_dir=None):
 
     model_params = {
         'model_type': model_type
@@ -117,38 +96,46 @@ def setup_model(model_type, save_dir):
             'pool': 'mean',  # for regression
         }
 
-    # save parameters
-    save_json_obj(model_params, os.path.join(save_dir, 'model_params'))
+    else:
+        raise ValueError(f'Incorrect model_type specified: {model_type}')
+
+    if save_dir:
+        save_json_obj(model_params, os.path.join(save_dir, 'model_params'))
 
     return model_params
 
 
-def setup_task(task_name):
+def setup_task(task_name, data_dirs, save_dir=None):
     """
     Returns task specific details.
     """
 
-    if task_name == 'surface_3d':
-        out_dim = 5
-        label_names = ['z', 'Rx', 'Ry']
+    task_params_df = pd.DataFrame(
+        columns = ['task_name', 'label_names'],
+        data = [
+                  ['surface_2d', ['y', 'Rz']],
+                  ['surface_3d', ['z', 'Rx', 'Ry']],
+                  ['edge_2d',    ['x', 'Rz']],
+                  ['edge_3d',    ['x', 'z', 'Rz']],
+                  ['edge_5d',    ['x', 'z', 'Rx', 'Ry', 'Rz']],
+        ]
+    )
 
-    elif task_name == 'edge_2d':
-        out_dim = 3
-        label_names = ['x', 'Rz']
+    pose_llims, pose_ulims = [], []
+    for data_dir in data_dirs:
+        pose_params = load_json_obj(os.path.join(data_dir, 'pose_params'))
+        pose_llims.append(pose_params['pose_llims'])
+        pose_ulims.append(pose_params['pose_ulims'])
 
-    elif task_name == 'surface_2d':
-        out_dim = 3
-        label_names = ['y', 'Rz']
+    query_str = f"task_name=='{task_name}'"
+    task_params = {
+        'label_names': task_params_df.query(query_str)['label_names'].iloc[0],
+        'pose_llims': list(np.min(pose_llims, axis=0).astype(float)),
+        'pose_ulims': list(np.max(pose_ulims, axis=0).astype(float))
+    }
 
-    elif task_name == 'edge_3d':
-        out_dim = 4
-        label_names = ['y', 'z', 'Rz']
+    # save parameters
+    if save_dir:
+        save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
 
-    elif task_name == 'edge_5d':
-        out_dim = 8
-        label_names = ['y', 'z', 'Rx', 'Ry', 'Rz']
-
-    else:
-        raise ValueError('Incorrect task_name specified: {}'.format(task_name))
-
-    return out_dim, label_names
+    return task_params

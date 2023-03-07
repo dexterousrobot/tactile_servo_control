@@ -1,22 +1,23 @@
+# -*- coding: utf-8 -*-
 import os
+import argparse
 import numpy as np
 import pandas as pd
 
-from tactile_gym.utils.general_utils import check_dir
 
-
-def make_target_df_rand(
-    num_poses,
+def setup_target_df(
+    num_poses, 
+    save_dir,
     shuffle_data=False,
-    pose_llims=[0, 0, 0, 0, 0, 0],
-    pose_ulims=[0, 0, 0, 0, 0, 0],
-    move_llims=[0, 0, 0, 0, 0, 0],
-    move_ulims=[0, 0, 0, 0, 0, 0],
-    obj_poses=[[0, 0, 0, 0, 0, 0]]
+    pose_llims=[0, 0, 0, 0, 0, 0], 
+    pose_ulims=[0, 0, 0, 0, 0, 0], 
+    move_llims=[0, 0, 0, 0, 0, 0], 
+    move_ulims=[0, 0, 0, 0, 0, 0], 
+    obj_poses=[[0, 0, 0, 0, 0, 0]]  
 ):
 
-    # generate random poses
-    np.random.seed()
+    # generate random poses 
+    np.random.seed(0) # make predictable
     poses = np.random.uniform(
         low=pose_llims, high=pose_ulims, size=(num_poses, 6)
     )
@@ -50,24 +51,38 @@ def make_target_df_rand(
     if shuffle_data:
         target_df = target_df.sample(frac=1).reset_index(drop=True)
 
+    target_file = os.path.join(save_dir, "targets.csv")
+    target_df.to_csv(target_file, index=False)
+
     return target_df
 
 
-def create_data_dir(
-    collect_dir,
-    target_df
-):
+def setup_parse(input):
+    parser = argparse.ArgumentParser()
+    
+    for item, value in input.items():
+        default, options = value
 
-    # set image dir and target file
-    image_dir = os.path.join(collect_dir, "images")
-    target_file = os.path.join(collect_dir, "targets.csv")
+        if isinstance(default, str):
+            parser.add_argument(
+                '-' + item[0], 
+                '--' + item,
+                type=str,
+                help=f"Choose {item} from {options}.",
+                default=default
+            )
+        elif isinstance(default, list): 
+            parser.add_argument(
+                '-' + item[0], 
+                '--' + item,
+                nargs='+',
+                help=f"Choose {item} from {options}.",
+                default=default
+            )
 
-    # check save dir exists
-    check_dir(collect_dir)
-    os.makedirs(collect_dir, exist_ok=True)
-    os.makedirs(image_dir, exist_ok=True)
+    args = parser.parse_args()
+    output = []
+    for item in input:
+        output.append(eval('args.' + item))
 
-    # save target csv
-    target_df.to_csv(target_file, index=False)
-
-    return image_dir
+    return output
