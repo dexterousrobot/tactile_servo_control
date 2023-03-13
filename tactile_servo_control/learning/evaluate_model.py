@@ -132,6 +132,7 @@ if __name__ == "__main__":
                 in_channels=1,
                 out_dim=label_encoder.out_dim,
                 model_params=model_params,
+                saved_model_dir=save_dir,
                 device=device
             )
             model.eval()

@@ -7,10 +7,12 @@ from tactile_image_processing.image_transforms import process_image
 class SimSensor:
     def __init__(self, embodiment, sensor_params={}):  
         self.sensor_params = sensor_params
-        self.sensor = embodiment.controller._client._sim_env
+        self.embodiment = embodiment
+        # self.sensor = embodiment.controller._client._sim_env
 
     def read(self):
-        img =  self.sensor.get_tactile_observation()
+        img =  self.embodiment.get_tactile_observation()
+        # img =  self.sensor.get_tactile_observation()
         return img
 
     def process(self, outfile=None):

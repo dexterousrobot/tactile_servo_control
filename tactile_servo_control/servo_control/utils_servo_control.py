@@ -54,6 +54,7 @@ class PoseModel:
         for label_name in self.label_names:
             predicted_val = predictions_dict[label_name].detach().cpu().numpy() 
             predictions_arr[POSE_LABEL_NAMES.index(label_name)] = predicted_val
+            
             with np.printoptions(precision=1, suppress=True):
                 print(label_name, predicted_val, end="")
 
@@ -135,6 +136,7 @@ class PlotContour3D:
         self._fig.clear()
         self._fig.subplots_adjust(left=-0.1, right=1.1, bottom=-0.05, top=1.05)
         self._ax = self._fig.add_subplot(111, projection='3d')
+        self._ax.view_init(90,-90,0)#(elev=30, azim=45, roll=15)
         self._ax.azim = workframe[5]
         self._ax.plot(limits[0], limits[1], limits[2], ':w')  
 

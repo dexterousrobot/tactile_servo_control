@@ -9,12 +9,9 @@ def setup_sensor_params(robot, task, save_dir=None):
 
     if robot == 'Sim':
         sensor_params = {
-            "name": "tactip",
-            "type": "standard",
-            "core": "no_core",
-            "dynamics": {},
+            "type": "standard_tactip",
             "image_size": (128, 128),
-            "turn_off_border": False,
+            "show_tactile": True
         }
 
     else:
@@ -41,12 +38,12 @@ def setup_sensor_params(robot, task, save_dir=None):
 def setup_pose_params(robot, task, save_dir=None):
 
     pose_lims_df = pd.DataFrame(
-        columns = ['task',       'pose_llims',                      'pose_ulims'],
+        columns = ['task',       'pose_llims',                    'pose_ulims'],
         data = [
-                  ['surface_3d', ( 0, 0,  0.5, -45/2, -45/2, 0),    (0, 0, 5.5, 45/2, 45/2, 0)],
-                  ['edge_2d',    (-5, 0, -3.5, 0, 0, -180),         (5, 0, -2.5, 0, 0, 180)],
-                  ['edge_3d',    (-5, 0, -3.5, -45/2, -45/2, -180), (5, 0, -2.5, 45/2, 45/2, 180)],
-                  ['edge_5d',    (-5, 0, -5, -15, -15, -180),       (5, 0, -1, 15, 15, 180)],
+                  ['surface_3d', ( 0, 0,  0.5, -45/2, -45/2, 0),  (0, 0, 5.5, 45/2, 45/2, 0)],
+                  ['edge_2d',    (-5, 0, -4, 0, 0, -180),         (5, 0, -3, 0, 0, 180)],
+                  ['edge_3d',    (-5, 0, -3.5, -15, -15, -180),   (5, 0, -2.5, 15, 15, 180)],
+                  ['edge_5d',    (-5, 0, -5, -15, -15, -180),     (5, 0, -1, 15, 15, 180)],
         ]
     )
     query_str = f"task=='{task}'"
@@ -79,14 +76,12 @@ def setup_env_params(robot, task, save_dir=None):
 
     env_params = {
         'robot': robot,
+        'arm_type': 'ur5',
         'stim_name': 'square'
     }
 
     if robot == 'Sim':
         env_params['stim_pose'] = (600, 0, 0, 0, 0, 0)
-        env_params['show_tactile'] = True
-        env_params['show_gui'] = True
-        env_params['quick_mode'] = False
 
     else:
         env_params['speed'] = 50 
@@ -95,12 +90,12 @@ def setup_env_params(robot, task, save_dir=None):
     params_df = pd.DataFrame(
         columns = ['robot', 'task',            'work_frame',           'tcp_pose'],
         data = [
-                  ['CR',    'edge',    (20, -475, 69, -180, 0, 0),  (0, 0, -100, 0, 0, 0)],
-                  ['CR',    'surface', (20, -425, 69, -180, 0, 0),  (0, 0, -100, 0, 0, 0)],
-                  ['MG400', 'edge',    (285,  0, 0, -180, 0, 90), (0, 0, -50, 0, 0, 0)],
-                  ['MG400', 'surface', (285,  0, 0, -180, 0, 90), (0, 0, -50, 0, 0, 0)],
-                  ['Sim',   'edge',    (650, 0, 40, -180, 0, 0),    (0, 0, 0, 0, 0, 0)],
-                  ['Sim',   'surface', (600, 0, 40, -180, 0, 0),    (0, 0, 0, 0, 0, 0)],
+                  ['CR',    'edge',    (20, -475, 69, -180, 0, 0), (0, 0, -100, 0, 0, 0)],
+                  ['CR',    'surface', (20, -425, 69, -180, 0, 0), (0, 0, -100, 0, 0, 0)],
+                  ['MG400', 'edge',    (285,  0, 0, -180, 0, 90),  (0, 0, -50, 0, 0, 0)],
+                  ['MG400', 'surface', (285,  0, 0, -180, 0, 90),  (0, 0, -50, 0, 0, 0)],
+                  ['Sim',   'edge',    (650, 0, 129, -180, 0, 0),   (0, 0, -89, 0, 0, 0)],
+                  ['Sim',   'surface', (600, 0, 129, -180, 0, 0),   (0, 0, -89, 0, 0, 0)],
         ]
     )
     query_str = f"robot=='{env_params['robot']}' & task=='{task[:-3]}'"

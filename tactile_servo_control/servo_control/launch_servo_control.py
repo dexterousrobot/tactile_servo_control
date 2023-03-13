@@ -12,6 +12,7 @@ from tactile_learning.supervised.models import create_model
 from tactile_servo_control.collect_data.utils_collect_data import setup_parse
 
 from tactile_servo_control.learning.utils_learning import PoseEncoder
+from tactile_servo_control.utils.controller import PIDController
 
 from servo_control import servo_control
 from setup_servo_control import setup_control_params, setup_env_params 
@@ -26,7 +27,7 @@ def launch():
     input_args = {
         'tasks':   [['edge_2d'], "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
         'stimuli': [['circle'],  "['circle', 'square', 'clover', 'foil', 'saddle', 'bowl']"],
-        'robot':   ['Sim',        "['Sim', 'MG400', 'CR']"],
+        'robot':   ['Sim',       "['Sim', 'MG400', 'CR']"],
         'device':  ['cuda',      "['cpu', 'cuda']"],
     }
     tasks, stimuli, robot, device = setup_parse(input_args)
@@ -37,12 +38,12 @@ def launch():
             # setup save dir
             save_dir = os.path.join(BASE_TEST_PATH, robot, task, stimulus + test_version)
             image_dir = os.path.join(save_dir, "images")
-            make_dir(save_dir)
-            make_dir(image_dir)
+            make_dir(save_dir, check=False)
+            make_dir(image_dir, check=False)
 
-            # setup environment, control, embodiment, network and model
-            control_params = setup_control_params(task, save_dir)
+            # setup control and environment
             env_params = setup_env_params(robot, task, stimulus, save_dir)
+            control_params = setup_control_params(task, save_dir)
 
             # set saved model dir
             model_dir = os.path.join(BASE_MODEL_PATH, robot, task, env_params['model_type'] + model_version)
@@ -55,17 +56,20 @@ def launch():
             # create the label encoder/decoder
             label_encoder = PoseEncoder(**task_params, device=device)
 
-            # setup embodiment, network and model
-            embodiment = setup_embodiment(
+            # setup robot, sensor and controller
+            robot, sensor = setup_embodiment(
                 env_params, 
                 sensor_params
             )
+            pid_controller = PIDController(**control_params)
 
+            # setup model
             model = create_model(
                 in_dim=sensor_params['image_processing']['dims'],
                 in_channels=1,
                 out_dim=label_encoder.out_dim,
                 model_params=model_params,
+                saved_model_dir=model_dir,
                 device=device
             )
             model.eval()
@@ -79,10 +83,12 @@ def launch():
 
             # run the servo control
             servo_control(
-                embodiment,
+                robot,
+                sensor,
                 pose_model,
+                pid_controller,
                 image_dir,
-                **control_params
+                env_params['num_iterations']
             )
 
 
