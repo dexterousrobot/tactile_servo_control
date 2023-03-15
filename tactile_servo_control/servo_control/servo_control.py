@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import time as t
 import numpy as np
 
 from cri.transforms import inv_transform_euler, transform_euler
@@ -14,20 +15,28 @@ def servo_control(
             controller,
             image_dir,
             num_iterations=100,
-            plot_trajectory=True
+            show_plot=True,
+            show_slider=False,
+            servo_mode=False
         ):
 
     # initialize peripherals
-    slider = Slider(controller.ref)
-    if plot_trajectory:
+    if show_plot:
         plotContour = PlotContour(robot.coord_frame)
-
-    # initialise controller and pose
-    pose = [0, 0, 0, 0, 0, 0]
+    if show_slider:
+        slider = Slider(controller.ref)
 
     # move to initial pose from 50mm above workframe
+    robot.move_joints([*robot.joint_angles[:-1], 0])
     robot.move_linear((0, 0, -50, 0, 0, 0))
+
+    # zero pose and clock
+    pose = [0, 0, 0, 0, 0, 0]
     robot.move_linear(pose)
+    t_0 = t.time()
+
+    # turn on servo mode if set
+    robot.controller.servo_mode = servo_mode 
 
     # iterate through servo control
     for i in range(num_iterations):
@@ -46,24 +55,24 @@ def servo_control(
         pose = inv_transform_euler(servo, robot.pose)
         robot.move_linear(pose)
 
-        # optionally plot and render view
-        if plot_trajectory:
+        # optional peripheral: plot trajectory, reference slider
+        if show_plot:
             plotContour.update(pose)
-
-        # use slider to set reference
-        controller.ref = slider.read()
+        if show_slider:
+            controller.ref = slider.read()
 
         # report
         with np.printoptions(precision=1, suppress=True):
-            print(f'\n step {i+1}: pose: {pose}')
+            print(f'\n step {i+1} time {np.array([t.time()-t_0])}: pose: {pose}')
 
     # finish 50mm above initial pose and zero joint_6
+    robot.controller.servo_mode = False
     robot.move_linear((0, 0, -50, 0, 0, 0))
     robot.move_joints((*robot.joint_angles[:-1], 0))
     robot.close()
 
     # optionally save plot and render view
-    if plot_trajectory:
+    if show_plot:
         plot_outfile = os.path.join(image_dir, r"../trajectory.png")
         plotContour.save(plot_outfile)
 

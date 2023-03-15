@@ -8,7 +8,7 @@ import numpy as np
 from tactile_learning.supervised.models import create_model
 from tactile_learning.utils.utils_learning import load_json_obj
 
-from utils_learning import PoseEncoder
+from utils_learning import PoseEncoder, POSE_LABEL_NAMES
 from tactile_servo_control.collect_data.utils_collect_data import setup_parse
 from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 
@@ -26,37 +26,39 @@ def test_model(
     model
 ):
     # start 50mm above workframe origin
-    robot.move_linear((0, 0, 50, 0, 0, 0))
+    robot.move_linear((0, 0, -50, 0, 0, 0))
 
     # drop 10mm to contact object
-    tap = (0, 0, -10, 0, 0, 0)
+    tap = (0, 0, 10, 0, 0, 0)
 
-    # ==== data collection loop ====
-    # for v in np.arange(-10,10,1):
-    #     pose = np.array((v, 0, -3.5, 0, 0, 0))
+    for label_name in model.label_names:
+        ind = POSE_LABEL_NAMES.index(label_name)
+        llim = model.pose_encoder.pose_llims_np[ind]
+        ulim = model.pose_encoder.pose_ulims_np[ind]
 
-    for v in np.arange(-180,180,10):
-        pose = np.array((0, 0, -3.5, 0, 0, v))
+        for v in np.arange(llim, ulim+(ulim-llim)/10, (ulim-llim)/10):
+            pose = np.array((0, 0, 3.5, 0, 0, 0))
+            pose[ind] = v
 
-        # move to above new pose (avoid changing pose in contact with object)
-        robot.move_linear(pose - tap)
+            # move to above new pose (avoid changing pose in contact with object)
+            robot.move_linear(pose - tap)
 
-        # move to target positon 
-        robot.move_linear(pose)
+            # move to target positon 
+            robot.move_linear(pose)
 
-        # collect and process tactile image
-        tactile_image = sensor.process()
-        model.predict(tactile_image)
+            # collect and process tactile image
+            tactile_image = sensor.process()
+            model.predict(tactile_image)
 
-        # move back to above target positon 
-        robot.move_linear(pose - tap)
+            # move back to above target positon 
+            robot.move_linear(pose - tap)
 
-        # report
-        with np.printoptions(precision=1, suppress=True):
-            print(f"\nPose {pose}")
+            # report
+            with np.printoptions(precision=1, suppress=True):
+                print(f"\nPose {pose}")
 
     # finish 50mm above workframe origin then zero last joint 
-    robot.move_linear((0, 0, 50, 0, 0, 0))
+    robot.move_linear((0, 0, -50, 0, 0, 0))
     robot.move_joints((*robot.joint_angles[:-1], 0))
     robot.close()
 
@@ -80,7 +82,7 @@ if __name__ == "__main__":
             data_dir = os.path.join(BASE_DATA_PATH, robot, task, 'data')
             model_dir = os.path.join(BASE_MODEL_PATH, robot, task, model_type + model_version)
 
-            # setup parameters
+            # load parameters
             env_params = load_json_obj(os.path.join(data_dir, 'env_params'))
             task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
             model_params = load_json_obj(os.path.join(model_dir, 'model_params'))

@@ -11,7 +11,8 @@ def collect_data(
     target_df,
     image_dir
 ):
-    # start 50mm above workframe origin
+    # start 50mm above workframe origin with zero joint 6
+    robot.move_joints([*robot.joint_angles[:-1], 0])
     robot.move_linear((0, 0, -50, 0, 0, 0))
 
     # collect reference image
@@ -19,10 +20,10 @@ def collect_data(
     sensor.process(image_outfile)
 
     # drop 10mm to contact object
-    tap = (0, 0, -10, 0, 0, 0)
+    tap = (0, 0, 10, 0, 0, 0)
 
     # ==== data collection loop ====
-    for i, row in target_df.iterrows():
+    for _, row in target_df.iterrows():
         i_obj = int(row.loc["obj_id"])
         i_pose = int(row.loc["pose_id"])
         pose = row.loc["pose_1":"pose_6"].values.astype(np.float32)
@@ -54,7 +55,7 @@ def collect_data(
         robot.move_linear(pose - tap)
 
     # finish 50mm above workframe origin then zero last joint 
-    robot.move_linear((0, 0, 50, 0, 0, 0))
+    robot.move_linear((0, 0, -50, 0, 0, 0))
     robot.move_joints((*robot.joint_angles[:-1], 0))
     robot.close()
 

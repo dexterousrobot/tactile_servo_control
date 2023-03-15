@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python launch_training.py -r Sim -m simple_cnn -t edge_2d
+python launch_training.py -r CR -m simple_cnn -t edge_2d
 """
 import os
 

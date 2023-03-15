@@ -6,7 +6,7 @@ import os
 
 from tactile_learning.utils.utils_learning import load_json_obj, make_dir
 
-from tactile_servo_control import BASE_MODEL_PATH, BASE_TEST_PATH
+from tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, BASE_TEST_PATH
 from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 from tactile_learning.supervised.models import create_model
 from tactile_servo_control.collect_data.utils_collect_data import setup_parse
@@ -25,9 +25,9 @@ test_version = ''
 def launch():
 
     input_args = {
-        'tasks':   [['edge_2d'], "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'tasks':   [['edge_2d'], "['surface_3d', 'edge_2d', 'edge_2d_servo', 'edge_3d', 'edge_5d']"],
         'stimuli': [['circle'],  "['circle', 'square', 'clover', 'foil', 'saddle', 'bowl']"],
-        'robot':   ['Sim',       "['Sim', 'MG400', 'CR']"],
+        'robot':   ['CR',       "['Sim', 'MG400', 'CR']"],
         'device':  ['cuda',      "['cpu', 'cuda']"],
     }
     tasks, stimuli, robot, device = setup_parse(input_args)
@@ -41,14 +41,14 @@ def launch():
             make_dir(save_dir, check=False)
             make_dir(image_dir, check=False)
 
-            # setup control and environment
-            env_params = setup_env_params(robot, task, stimulus, save_dir)
+            # set saved data and model dir
+            data_dir = os.path.join(BASE_DATA_PATH, robot, task, 'data')
+
+            env_params = setup_env_params(stimulus, data_dir, save_dir)
             control_params = setup_control_params(task, save_dir)
 
-            # set saved model dir
+            # load parameters
             model_dir = os.path.join(BASE_MODEL_PATH, robot, task, env_params['model_type'] + model_version)
-
-            # load model and sensor params
             task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
             model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
             sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))
@@ -88,7 +88,8 @@ def launch():
                 pose_model,
                 pid_controller,
                 image_dir,
-                env_params['num_iterations']
+                num_iterations = env_params['num_iterations'],
+                servo_mode = env_params.get('servo_mode', False)
             )
 
 

@@ -58,8 +58,8 @@ class PoseEncoder:
 
     @property
     def out_dim(self):
-        label_dims = [self.target_label_names .count(p) for p in POS_LABEL_NAMES] \
-                    + [2*self.target_label_names .count(p) for p in ROT_LABEL_NAMES]
+        label_dims = [self.target_label_names.count(p) for p in POS_LABEL_NAMES] \
+                    + [2*self.target_label_names.count(p) for p in ROT_LABEL_NAMES]
         return sum(label_dims)
 
     def encode_label(self, labels_dict):
@@ -114,7 +114,7 @@ class PoseEncoder:
         }
 
         label_name_idx = 0
-        for label_name in self.target_label_names :
+        for label_name in self.target_label_names:
 
             if label_name in POS_LABEL_NAMES:
                 predictions = outputs[:, label_name_idx].detach().cpu()

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
-import pandas as pd
+import numpy as np
 
-from tactile_learning.utils.utils_learning import save_json_obj
+from tactile_learning.utils.utils_learning import load_json_obj, save_json_obj
 from cri.transforms import transform_euler
 
 
@@ -14,16 +14,16 @@ def setup_control_params(task, save_dir=None):
             'ki': [0, 0, 0.3, 0.1, 0.1, 0],                
             'ei_clip': [[0, 0, 0, -30, -30, 0], [0, 0, 5, 30, 30, 0]],        
             'error': 'lambda y, r: transform_euler(r, y)',  # SE(3) error
-            'ref': [0, -1, 3, 0, 0, 0]              
+            'ref': [0, 1, 3, 0, 0, 0]              
         }
 
     elif task == 'edge_2d':
         control_params = {
-            'kp': [0.5, 1, 0, 0, 0, 1],                 
+            'kp': [0.5, 1, 0, 0, 0, 0.5],                 
             'ki': [0.3, 0, 0, 0, 0, 0.1],                
             'ei_clip': [[-5, 0, 0, 0, 0, -45], [5, 0, 0, 0, 0,  45]],          
             'error': 'lambda y, r: transform_euler(r, y)',  # SE(3) error
-            'ref': [0, 1, 0, 0, 0, 0]              
+            'ref': [0, 2, 0, 0, 0, 0]              
         }
 
     elif task == 'edge_3d':
@@ -32,7 +32,7 @@ def setup_control_params(task, save_dir=None):
             'ki': [0.3, 0, 0.3, 0, 0, 0.1],                
             'ei_clip': [[0, -5, 0, 0, 0, -45], [0, 5, 5, 0, 0, 45]],
             'error': 'lambda y, r: transform_euler(r, y)',  # SE(3) error
-            'ref_pose': [0, 1, 3, 0, 0, 0]             
+            'ref': [0, 2, 3, 0, 0, 0]             
         }
 
     elif task == 'edge_5d':
@@ -41,7 +41,7 @@ def setup_control_params(task, save_dir=None):
             'ki': [0, 0.3, 0.3, 0.1, 0.1, 0.1],
             'ei_clip': [[0, -5, 0, -30, -30, -45], [0, 5, 5, 30, 30, 45]],
             'error': 'lambda y, r: transform_euler(r, y)',  # SE(3) error
-            'ref_pose': [1, 0, 3, 0, 0, 0]              
+            'ref': [0, 2, 3, 0, 0, 0]              
         }
 
     if save_dir:
@@ -54,38 +54,25 @@ def setup_control_params(task, save_dir=None):
     return control_params
 
 
-def setup_env_params(robot, task, stimulus, save_dir=None):
+def setup_env_params(stimulus, data_dir, save_dir=None):
 
-    if robot == 'Sim':
-        env_params = {
-            'robot': 'Sim',
-            'tcp_pose': (0, 0, 0, 0, 0, 0),
-            'stim_name': stimulus,
-            'stim_pose': (600, 0, 0, 0, 0, 0),
-            'model_type': 'simple_cnn'
-        }
-    
-    else:
-        env_params = {
-            'robot': 'CR',
-            'tcp_pose': (0, 0, 0, 0, 0, 0),
-            'stim_name': stimulus,
-            'speed': 20, 
-            'model_type': 'posenet_cnn',
-            # 'servo_delay': 0.1
-        }
+    wf_offset_dict = {
+        'saddle':  (-10, 0, 18.5, 0, 0, 0),
+        'default': (0, 0, 4.0, 0, 0, 0)
+    }
+    wf_offset = np.array(wf_offset_dict.get(stimulus, wf_offset_dict['default']))
 
-    setup_df = pd.DataFrame(
-        columns = ['robot', 'task',   'stimulus', 'work_frame',             'num_iterations'],
-        data = [
-                  ['CR',    'edge',   'circle',   (0,  -470,  65, -180, 0, 0),  250],
-                  ['Sim',   'edge',   'square',   (650, 0, 129+3, -180, 0, 0),  250],
-                  ['Sim',   'edge',   'circle',   (650, 0, 129+3, -180, 0, 0),  250],
-        ]
-    )
-    query_str = f"robot=='{env_params['robot']}' & task=='{task[:-3]}' & stimulus=='{stimulus}'"
-    env_params['work_frame'] = setup_df.query(query_str)['work_frame'].iloc[0]
-    env_params['num_iterations'] = int(setup_df.query(query_str)['num_iterations'].iloc[0])
+    env_params = load_json_obj(os.path.join(data_dir, 'env_params'))
+
+    env_params.update({
+        'stim_name': stimulus,
+        'num_iterations': 200,
+        'work_frame': tuple(env_params['work_frame'] - wf_offset),
+        'model_type': 'simple_cnn',
+        'speed': 20,
+        # 'servo_mode': True,
+        # 'servo_delay': 0.0,
+    })
 
     if save_dir:
         save_json_obj(env_params, os.path.join(save_dir, 'env_params'))

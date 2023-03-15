@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python evaluate_model.py -r Sim -m simple_cnn -t edge_2d
+python evaluate_model.py -r CR -m simple_cnn -t edge_2d
 """
 import os
 import pandas as pd
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     input_args = {
         'tasks':  [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
         'models': [['simple_cnn'], "['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']"],
-        'robot':  ['Sim',           "['Sim', 'MG400', 'CR']"],
+        'robot':  ['CR',           "['Sim', 'MG400', 'CR']"],
         'device': ['cuda',         "['cpu', 'cuda']"],
     }
     tasks, model_types, robot, device = setup_parse(input_args)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python launch_collect_data.py -r Sim -t edge_2d
+python launch_collect_data.py -r CR -t edge_2d
 """
 import os
 
@@ -22,7 +22,7 @@ def launch():
 
     tasks, robot = setup_parse({
         'tasks':  [['edge_2d'],  "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
-        'robot':  ['Sim',        "['Sim', 'MG400', 'CR']"],
+        'robot':  ['CR',        "['Sim', 'MG400', 'CR']"],
     })
     
     for task in tasks:
