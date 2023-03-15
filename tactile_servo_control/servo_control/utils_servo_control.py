@@ -54,8 +54,9 @@ class PoseModel:
         for label_name in self.label_names:
             predicted_val = predictions_dict[label_name].detach().cpu().numpy() 
             predictions_arr[POSE_LABEL_NAMES.index(label_name)] = predicted_val
-            with np.printoptions(precision=1, suppress=True):
-                print(label_name, predicted_val, end="")
+            
+            with np.printoptions(precision=2, suppress=True):
+                print(label_name, predicted_val, end=" ")
 
         return predictions_arr
 
@@ -70,51 +71,6 @@ def move_figure(f, x, y):
     else:
         # This works for QT and GTK; can also use window.setGeometry
         f.canvas.manager.window.move(x, y)
-
-
-class PlotContour2D:
-    def __init__(self, 
-                poses=[[-60,60], [-10,110]],
-                workframe=[0, 0, 0, 0, 0, 90],
-                position=[0, 400],
-                r=[-1,1], 
-                inv=-1
-    ):
-        self._fig = plt.figure('Contour 2d', figsize=(5, 5))
-        self._fig.clear()
-        self._ax = self._fig.add_subplot(111) 
-        self._ax.set_aspect('equal', adjustable='box')
-        
-        self._ax.plot(poses[0], poses[1], ':w')  
-
-        self.r = r[:2]/np.linalg.norm(r[:2])
-        self.a, self.i = (workframe[5]-90)*np.pi/180, inv 
-
-        self.v = [0, 0, 0, 0, 0, 0]
-
-        move_figure(self._fig, *position)
-        self._fig.show()
-
-    def update(self, v):
-        self.v = np.vstack([self.v, v])
-
-        v_q = euler2quat([0, 0, 0, 0, 0, self.i*self.v[-1,5]+self.a], axes='rxyz')
-        d_q = euler2quat([*self.r[::-self.i], 0, 0, 0, 0], axes='rxyz')
-        d = 5*quat2euler(inv_transform(d_q, v_q), axes='rxyz')
-
-        rv = np.zeros(np.shape(self.v))
-        rv[:,0] = self.i * ( np.cos(self.a)*self.v[:,0] - np.sin(self.a)*self.v[:,1] )
-        rv[:,1] = np.sin(self.a)*self.v[:,0] + np.cos(self.a)*self.v[:,1]
-        
-        self._ax.plot(rv[-2:,0], rv[-2:,1], '-r') 
-        self._ax.plot(rv[-2:,0]+[d[0],-d[0]], rv[-2:,1]+[d[1],-d[1]], '-b', linewidth=0.5) 
-
-        self._fig.canvas.flush_events()   # update the plot
-        plt.pause(0.0001)
-
-    def save(self, outfile=None):
-        if outfile is not None:
-            self._fig.savefig(outfile, bbox_inches="tight") 
 
 
 class PlotContour3D:
@@ -135,6 +91,8 @@ class PlotContour3D:
         self._fig.clear()
         self._fig.subplots_adjust(left=-0.1, right=1.1, bottom=-0.05, top=1.05)
         self._ax = self._fig.add_subplot(111, projection='3d')
+        # self._ax.view_init(90,-90, 0)#(elev=30, azim=45, roll=15)
+        self._ax.view_init(30, 45, 15, 'z')
         self._ax.azim = workframe[5]
         self._ax.plot(limits[0], limits[1], limits[2], ':w')  
 
@@ -168,7 +126,7 @@ class PlotContour3D:
         plt.pause(0.0001)
 
     def save(self, outfile=None):
-        if outfile is not None:
+        if outfile:
             self._fig.savefig(outfile, bbox_inches="tight") 
 
 

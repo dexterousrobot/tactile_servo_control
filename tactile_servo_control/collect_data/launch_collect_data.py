@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python launch_collect_data.py -r Sim -t edge_2d
+python launch_collect_data.py -r CR -t edge_2d
 """
 import os
 
@@ -13,7 +13,7 @@ from setup_collect_data import setup_collect_data
 from utils_collect_data import setup_target_df, setup_parse
 
 collect_params = {
-    'data': 10,#5000,
+    'data': 5000,
     # 'train': 4000,
     # 'val': 1000
 }
@@ -21,8 +21,8 @@ collect_params = {
 def launch():
 
     tasks, robot = setup_parse({
-        'tasks':  [['edge_2d'],   "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
-        'robot':  ['MG400',          "['Sim', 'MG400', 'CR']"],
+        'tasks':  [['edge_2d'],  "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
+        'robot':  ['CR',        "['Sim', 'MG400', 'CR']"],
     })
     
     for task in tasks:
@@ -42,7 +42,7 @@ def launch():
             )
 
             # setup embodiment
-            embodiment = setup_embodiment(
+            robot, sensor = setup_embodiment(
                 env_params, 
                 sensor_params
             )
@@ -56,7 +56,8 @@ def launch():
 
             # collect          
             collect_data(
-                embodiment, 
+                robot,
+                sensor, 
                 target_df, 
                 image_dir
             )

@@ -10,7 +10,7 @@ from tactile_image_processing.image_transforms import process_image
 
 
 tasks = ['edge_2d']#, 'surface_2d']
-robot = 'Sim'
+robot = 'CR'
 
 # define split
 indir_name = "data"
@@ -18,13 +18,13 @@ outdir_names = ["train", "val"]
 split = 0.8
 
 # optional image processing
-# sensor_params = {
-#     'thresh': True,
-#     'dims': (128,128),
-#     "circle_mask_radius": 220,
-#     "bbox": [10, 10, 430, 430]
-#     # "bbox": [10, 10, 310, 310]
-#     }
+sensor_params = {#}
+    'thresh': True,
+    'dims': (128,128),
+    "circle_mask_radius": 220,
+    "bbox": (10, 10, 430, 430)
+    # "bbox": (10, 10, 310, 310)
+    }
 
 for task in tasks:
 
@@ -51,7 +51,7 @@ for task in tasks:
         shutil.copy(os.path.join(indir, 'env_params.json'), outdir)
         
         # optional - process image data if sensor_params supplied
-        try:
+        if sensor_params: 
             sensor_params_in = load_json_obj(os.path.join(indir, 'sensor_params'))
             sensor_params_out = {**sensor_params_in, **sensor_params}
             
@@ -73,7 +73,7 @@ for task in tasks:
                 cv2.imwrite(outfile, proc_img)
         
         # except just point to original data
-        except:
+        else:
             shutil.copy(os.path.join(indir, 'sensor_params.json'), outdir)  
 
             targets_df.loc[ind,'sensor_image'] = \

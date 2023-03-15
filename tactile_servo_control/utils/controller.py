@@ -10,13 +10,16 @@ class Controller(ABC):
         self.u = u0
 
     @abstractmethod
-    def _policy(self, y, r):
+    def _policy(self, y, r=None):
         # return control signal u
         pass
 
-    def update(self, y, r):
+    def update(self, y, r=None):
         y = np.array(y)
-        r = np.array(r)
+        if r is None:
+            r = self.ref
+        else:
+            r = np.array(r)
         self.u = self._policy(y, r)
         self.t += 1
         return self.u
@@ -29,9 +32,14 @@ class Controller(ABC):
 
 class PIDController(Controller):
     def __init__(self, 
-                 t0=0, u0=0.0, kp=0.0, ki=0.0, kd=0.0, 
+                 t0=0, u0=0.0, 
+                 kp=0.0, ki=0.0, kd=0.0, 
                  ep_clip=[-np.inf, np.inf], ei_clip=[-np.inf, np.inf], ed_clip=[-np.inf, np.inf],
-                 alpha=1.0, error=lambda y, r: r-y):
+                 alpha=1.0, 
+                 ref=0.0,
+                 error=lambda y, r: r-y,
+                 **kwargs
+    ):
         super().__init__(t0=t0, u0=np.array(u0))
         self.kp = np.array(kp)
         self.ki = np.array(ki)
@@ -40,6 +48,7 @@ class PIDController(Controller):
         self.ei_clip = np.array(ei_clip)
         self.ed_clip = np.array(ed_clip)
         self.alpha = np.array(alpha)
+        self.ref = np.array(ref)
         self.error = error
 
         self.ef = 0.0
