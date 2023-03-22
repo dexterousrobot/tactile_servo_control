@@ -1,13 +1,17 @@
-# -*- coding: utf-8 -*-
 import os
-import pandas as pd
 
-from tactile_learning.utils.utils_learning import save_json_obj
+from tactile_data.utils_data import save_json_obj
 
 
-def setup_sensor_params(robot, task, save_dir=None):
+def setup_sensor_params(robot, sensor, save_dir=None):
 
-    if robot == 'Sim':
+    bbox_dict = {
+        'mini': (320-160, 240-160+25, 320+160, 240+160+25),
+        'midi': (320-220+10, 240-220-20, 320+220+10, 240+220-20)
+    }
+    sensor_type = 'midi'
+
+    if robot == 'sim':
         sensor_params = {
             "type": "standard_tactip",
             "image_size": (128, 128),
@@ -16,18 +20,12 @@ def setup_sensor_params(robot, task, save_dir=None):
 
     else:
         sensor_params = {
-            'type': 'midi',
+            'type': sensor_type,
             'source': 0,
             'exposure': -7,
             'gray': True,
+            'bbox': bbox_dict[sensor_type]
         }
-
-        bbox_params = {
-            'mini': (320-160, 240-160+25, 320+160, 240+160+25),
-            'midi': (320-220+10, 240-220-20, 320+220+10, 240+220-20)
-        }
-
-        sensor_params['bbox'] = bbox_params[sensor_params['type']]
 
     if save_dir:
         save_json_obj(sensor_params, os.path.join(save_dir, 'sensor_params'))
@@ -35,85 +33,73 @@ def setup_sensor_params(robot, task, save_dir=None):
     return sensor_params
 
 
-def setup_pose_params(robot, task, save_dir=None):
+def setup_task_params(robot, task, option=None, save_dir=None):
 
-    pose_lims_df = pd.DataFrame(
-        columns = ['task',       'pose_llims',                'pose_ulims'],
-        data = [
-                  ['surface_3d', ( 0, 0, 1, -15, -15, 0),     (0, 0, 5, 15, 15, 0)],
-                  ['edge_2d',    (-5, 0, 3, 0, 0, -180),      (5, 0, 4, 0, 0, 180)],
-                  ['edge_3d',    (-5, 0, 3, -15, -15, -180),  (5, 0, 4, 15, 15, 180)],
-                  ['edge_5d',    (-5, 0, 1, -15, -15, -180),  (5, 0, 5, 15, 15, 180)],
-        ]
-    )
-    query_str = f"task=='{task}'"
-    pose_params = {
-        'pose_llims': pose_lims_df.query(query_str)['pose_llims'].iloc[0],
-        'pose_ulims': pose_lims_df.query(query_str)['pose_ulims'].iloc[0],
+    pose_lims_dict = {
+        'surface_3d': [ ( 0, 0, 1, -25, -25,    0), (0, 0, 5, 25, 25, 0) ],
+        'edge_2d':    [ (-5, 0, 3,   0,   0, -180), (5, 0, 4, 0, 0, 180) ],
+        'edge_3d':    [ (-5, 0, 1,   0,   0, -180), (5, 0, 5, 0, 0, 180) ],
+        'edge_5d':    [ (-5, 0, 1, -20, -20, -180),  (5, 0, 5, 20, 20, 180) ],
+        'edge_5d_+yaw': [ (-5, 0, 1, -20, -20, 0),    (5, 0, 5, 20, 20, 180) ],
+        'edge_5d_-yaw': [ (-5, 0, 1, -20, -20, -180), (5, 0, 5, 20, 20, 0) ],
+    }
+    
+    shear_lims_dict = {
+        'cr':      [ (-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5) ],
+        'mg400':   [ (-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5) ],
+        'sim':     [ ( 0, 0, 0, 0, 0, 0),   (0, 0, 0, 0, 0, 0) ],
+    }
+
+    task_params = {
+        'pose_label_names': ["x", "y", "z", "Rx", "Ry", "Rz"],
+        'pose_llims': pose_lims_dict[task+option][0],
+        'pose_ulims': pose_lims_dict[task+option][1],
+        'shear_label_names': ["dx", "dy", "dz", "dRx", "dRy", "dRz"],
+        'shear_llims': shear_lims_dict[robot][0],
+        'shear_ulims': shear_lims_dict[robot][1],
+        'sort': False
     }   
 
-    # only do shear move on real robots
-    if robot != 'Sim':        
-        move_lims_df = pd.DataFrame(
-            columns = ['task',       'move_llims',             'move_ulims'],
-            data = [
-                    ['edge_2d',    (-5, -5, 0, 0, 0, -5),    (5, 5, 0, 0, 0, 5)],
-                    ['edge_5d',    (-5, -5, 0, -5, -5, -5),  (5, 5, 0, 5, 5, 5)],
-                    ['surface_3d', (-5, -5, 0, -5, -5, -5),  (5, 5, 0, 5, 5, 5)],
-            ]
-        )
-        query_str = f"task=='{task}'"
-        pose_params['move_llims'] = move_lims_df.query(query_str)['move_llims'].iloc[0],
-        pose_params['move_ulims'] = move_lims_df.query(query_str)['move_ulims'].iloc[0],
-
     if save_dir:
-        save_json_obj(pose_params, os.path.join(save_dir, 'pose_params'))
+        save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
 
-    return pose_params
+    return task_params
 
 
 def setup_env_params(robot, task, save_dir=None):
 
-    env_params = {
-        'robot': robot,
-        'stim_name': 'square'
+    work_frame_df = {
+        'cr_edge':       [ (20, -475, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0) ],
+        'cr_surface':    [ (20, -425, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0) ],
+        'mg400_edge':    [ (285,  0, 0, -180, 0, 0),     (0, 0, -50, 0, 0, 0) ],
+        'mg400_surface': [ (285,  0, 0, -180, 0, 0),     (0, 0, -50, 0, 0, 0) ],
+        'sim_edge':      [ (650, 0, 50, -180, 0, 0),     (0, 0, -85, 0, 0, 0) ],
+        'sim_surface':   [ (600, 0, 50, -180, 0, 0),     (0, 0, -85, 0, 0, 0) ],
     }
 
-    if robot == 'Sim':
-        env_params['arm_type'] = 'ur5',
+    env_params = {
+        'robot': robot,
+        'stim_name': 'square',
+        'speed': 50, 
+        'work_frame': work_frame_df[robot+'_'+task[:-3]][0],
+        'tcp_pose': work_frame_df[robot+'_'+task[:-3]][1]
+    }
+
+    if robot == 'sim':
         env_params['stim_pose'] = (600, 0, 0, 0, 0, 0)
 
-    else:
-        env_params['speed'] = 50 
-        # env_params['servo_delay'] = 0.1 
-
-    params_df = pd.DataFrame(
-        columns = ['robot', 'task',            'work_frame',           'tcp_pose'],
-        data = [
-                  ['CR',    'edge',    (20, -475, 70, -180, 0, 90), (0, 0, -100, 0, 0, 0)],
-                  ['CR',    'surface', (20, -425, 70, -180, 0, 90), (0, 0, -100, 0, 0, 0)],
-                  ['MG400', 'edge',    (285,  0, 0, -180, 0, 0),  (0, 0, -50, 0, 0, 0)],
-                  ['MG400', 'surface', (285,  0, 0, -180, 0, 0),  (0, 0, -50, 0, 0, 0)],
-                  ['Sim',   'edge',    (650, 0, 50, -180, 0, 0),   (0, 0, -85, 0, 0, 0)],
-                  ['Sim',   'surface', (600, 0, 50, -180, 0, 0),   (0, 0, -85, 0, 0, 0)],
-        ]
-    )
-    query_str = f"robot=='{env_params['robot']}' & task=='{task[:-3]}'"
-    env_params['work_frame'] = params_df.query(query_str)['work_frame'].iloc[0]
-    env_params['tcp_pose'] = params_df.query(query_str)['tcp_pose'].iloc[0]
-        
     if save_dir:
         save_json_obj(env_params, os.path.join(save_dir, 'env_params'))
     
     return env_params
 
 
-def setup_collect_data(reality, task, save_dir=None):
-    sensor_params = setup_sensor_params(reality, task, save_dir)
-    pose_params = setup_pose_params(reality, task, save_dir)
-    env_params = setup_env_params(reality, task, save_dir)
+def setup_collect_data(robot, sensor, task, option=None, save_dir=None):
+    sensor_params = setup_sensor_params(robot, sensor, save_dir)
+    task_params = setup_task_params(robot, task, option, save_dir)
+    env_params = setup_env_params(robot, task, save_dir)
 
-    return sensor_params, pose_params, env_params
+    return sensor_params, task_params, env_params
 
 
 if __name__ == '__main__':

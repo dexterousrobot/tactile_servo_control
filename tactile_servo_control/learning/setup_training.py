@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
 import os
-import pandas as pd
+import shutil
 import numpy as np
 
-from tactile_learning.utils.utils_learning import load_json_obj, save_json_obj
+from tactile_data.utils_data import load_json_obj, save_json_obj
 
 
-def setup_learning(data_dirs, save_dir=None):
+def setup_learning(save_dir=None):
 
-    # Parameters
     learning_params = {
         'seed': 42,
         'batch_size': 16,
@@ -38,15 +36,16 @@ def setup_learning(data_dirs, save_dir=None):
         'noise_var': None,
     }
 
-    sensor_params = load_json_obj(os.path.join(data_dirs[0], 'sensor_params'))
-    sensor_params['image_processing'] = image_processing_params
-    sensor_params['augmentation'] = augmentation_params
+    preproc_params = {
+        'image_processing': image_processing_params,
+        'augmentation': augmentation_params
+    }
 
     if save_dir:
         save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
-        save_json_obj(sensor_params, os.path.join(save_dir, 'sensor_params'))
+        save_json_obj(preproc_params, os.path.join(save_dir, 'preproc_params'))
 
-    return learning_params, sensor_params
+    return learning_params, preproc_params
 
 
 def setup_model(model_type, save_dir=None):
@@ -110,28 +109,27 @@ def setup_task(task_name, data_dirs, save_dir=None):
     Returns task specific details.
     """
 
-    task_params_df = pd.DataFrame(
-        columns = ['task_name', 'label_names'],
-        data = [
-                  ['surface_2d', ['y', 'Rz']],
-                  ['surface_3d', ['z', 'Rx', 'Ry']],
-                  ['edge_2d',    ['x', 'Rz']],
-                  ['edge_3d',    ['x', 'z', 'Rz']],
-                  ['edge_5d',    ['x', 'z', 'Rx', 'Ry', 'Rz']],
-        ]
-    )
+    label_inds_dict = {
+        'surface_3d': [   2, 3, 4   ],  # z Rx', 'Ry'
+        'edge_2d':    [0,          5],  # x Rz
+        'edge_3d':    [0, 2,       5],  # x z Rz
+        'edge_5d':    [0, 2, 3, 4, 5],  # x z Rx Ry Rz
+    }
 
+    # get data limits from training data
     pose_llims, pose_ulims = [], []
     for data_dir in data_dirs:
-        pose_params = load_json_obj(os.path.join(data_dir, 'pose_params'))
-        pose_llims.append(pose_params['pose_llims'])
-        pose_ulims.append(pose_params['pose_ulims'])
+        data_task_params = load_json_obj(os.path.join(data_dir, 'task_params'))
+        pose_llims.append(data_task_params['pose_llims'])
+        pose_ulims.append(data_task_params['pose_ulims'])
 
-    query_str = f"task_name=='{task_name}'"
+    pose_label_names = data_task_params['pose_label_names']
+
     task_params = {
-        'label_names': task_params_df.query(query_str)['label_names'].iloc[0],
-        'pose_llims': list(np.min(pose_llims, axis=0).astype(float)),
-        'pose_ulims': list(np.max(pose_ulims, axis=0).astype(float))
+        'pose_label_names': pose_label_names,
+        'target_label_names': [pose_label_names[i] for i in label_inds_dict[task_name]],
+        'pose_llims': tuple(np.min(pose_llims, axis=0).astype(float)),
+        'pose_ulims': tuple(np.max(pose_ulims, axis=0).astype(float))
     }
 
     # save parameters
@@ -139,3 +137,16 @@ def setup_task(task_name, data_dirs, save_dir=None):
         save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
 
     return task_params
+
+
+def setup_training(model_type, task, data_dirs, save_dir=None):
+    learning_params, preproc_params = setup_learning(save_dir)
+    model_params = setup_model(model_type, save_dir)
+    task_params = setup_task(task, data_dirs, save_dir)
+
+    # retain data parameters
+    if save_dir:
+        shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
+        shutil.copy(os.path.join(data_dirs[0], 'sensor_params.json'), save_dir)
+
+    return learning_params, model_params, preproc_params, task_params

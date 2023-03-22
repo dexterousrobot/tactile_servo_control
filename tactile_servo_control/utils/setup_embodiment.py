@@ -9,7 +9,7 @@ from tactile_sim.assets.default_rest_poses import rest_poses_dict
 from cri.robot import SyncRobot
 from cri.controller import SimController, Controller
 
-from tactile_servo_control.utils.sensors import SimSensor, RealSensor
+from tactile_servo_control.utils.sensors import SimSensor, RealSensor, ReplaySensor
 
 
 def setup_embodiment(
@@ -19,15 +19,19 @@ def setup_embodiment(
     env_params['stim_path'] = os.path.join(os.path.dirname(__file__), 'stimuli')
  
     # setup simulated robot
-    if env_params['robot'] == 'Sim':
+    if env_params['robot'] == 'sim':
         embodiment = setup_pybullet_env(**env_params, **sensor_params)        
         robot = SyncRobot(SimController(embodiment.arm))
-        sensor = SimSensor(embodiment, sensor_params)
+        sensor = SimSensor(sensor_params, embodiment)
     
     # setup real robot
-    else:
+    if env_params['robot'] != 'sim':
         robot = SyncRobot(Controller[env_params['robot']]())   
         sensor = RealSensor(sensor_params)
+
+    # if replay overwrite sensor
+    if sensor_params['type'] == 'replay':
+        sensor = ReplaySensor(sensor_params)
 
     # settings
     robot.speed = env_params.get('speed', 10)

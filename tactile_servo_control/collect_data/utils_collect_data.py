@@ -1,88 +1,49 @@
-# -*- coding: utf-8 -*-
 import os
-import argparse
 import numpy as np
 import pandas as pd
 
 
 def setup_target_df(
-    num_poses, 
-    save_dir,
-    shuffle_data=False,
-    pose_llims=[0, 0, 0, 0, 0, 0], 
-    pose_ulims=[0, 0, 0, 0, 0, 0], 
-    move_llims=[0, 0, 0, 0, 0, 0], 
-    move_ulims=[0, 0, 0, 0, 0, 0], 
-    obj_poses=[[0, 0, 0, 0, 0, 0]]  
+    task_params,
+    num_poses=100, 
+    save_dir=None,
 ):
 
     # generate random poses 
     np.random.seed(0) # make predictable
     poses = np.random.uniform(
-        low=pose_llims, high=pose_ulims, size=(num_poses, 6)
+        task_params['pose_llims'], task_params['pose_ulims'], size=(num_poses, 6)
     )
-    poses = poses[np.lexsort((poses[:, 1], poses[:, 5]))]
-    moves = np.random.uniform(
-        low=move_llims, high=move_ulims, size=(num_poses, 6)
+    shears = np.random.uniform(
+        task_params['shear_llims'], task_params['shear_ulims'], size=(num_poses, 6)
     )
+    
+    # sort by Rz then y to speed data collection
+    if task_params.get('sort', False):
+        poses = poses[np.lexsort((poses[:,1], poses[:,5]))]
 
     # generate and save target data
     target_df = pd.DataFrame(
         columns=[
             "sensor_image",
-            "obj_id",
-            "obj_pose",
-            "pose_id",
-            "pose_1", "pose_2", "pose_3", "pose_4", "pose_5", "pose_6",
-            "move_1", "move_2", "move_3", "move_4", "move_5", "move_6",
+            *task_params['pose_label_names'],
+            *task_params['shear_label_names']
         ]
     )
 
-    # populate dateframe
-    for i in range(num_poses * len(obj_poses)):
-        image_file = "image_{:d}.png".format(i + 1)
-        i_pose, i_obj = (int(i % num_poses), int(i / num_poses))
-        pose = poses[i_pose, :]
-        move = moves[i_pose, :]
-        target_df.loc[i] = np.hstack(
-            ((image_file, i_obj + 1, obj_poses[i_obj], i_pose + 1), pose, move)
-        )
+    # populate dataframe
+    for i in range(num_poses):
+        image_name = f"image_{i+1}.png"
+        pose = poses[i,:]
+        shear = shears[i,:]
+        target_df.loc[i] = np.hstack((image_name, pose, shear))
 
-    if shuffle_data:
-        target_df = target_df.sample(frac=1).reset_index(drop=True)
-
-    target_file = os.path.join(save_dir, "targets.csv")
-    target_df.to_csv(target_file, index=False)
+    # # shuffle and save
+    # if task_params.get('shuffle', False):
+    #     target_df = target_df.sample(frac=1).reset_index(drop=True)
+        
+    if save_dir:
+        target_file = os.path.join(save_dir, "targets.csv")
+        target_df.to_csv(target_file, index=False)
 
     return target_df
-
-
-def setup_parse(input):
-    parser = argparse.ArgumentParser()
-    
-    for item, value in input.items():
-        default, options = value
-
-        if isinstance(default, str):
-            parser.add_argument(
-                '-' + item[0], 
-                '--' + item,
-                type=str,
-                help=f"Choose {item} from {options}.",
-                default=default
-            )
-        elif isinstance(default, list): 
-            parser.add_argument(
-                '-' + item[0], 
-                '--' + item,
-                nargs='+',
-                help=f"Choose {item} from {options}.",
-                default=default
-            )
-
-    args = parser.parse_args()
-    output = []
-    for item in input:
-        output.append(eval('args.' + item))
-
-    return output

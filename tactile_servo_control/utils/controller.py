@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-
 import numpy as np
+
+from cri.transforms import transform_euler, inv_transform_euler
 
 
 class Controller(ABC):
@@ -49,6 +50,8 @@ class PIDController(Controller):
         self.ed_clip = np.array(ed_clip)
         self.alpha = np.array(alpha)
         self.ref = np.array(ref)
+        if isinstance(error, str):
+            error = eval(error) 
         self.error = error
 
         self.ef = 0.0
