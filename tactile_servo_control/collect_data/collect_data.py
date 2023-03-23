@@ -13,15 +13,17 @@ def collect_data(
 ):
 
     # start 50mm above workframe origin with zero joint 6
-    robot.move_joints([*robot.joint_angles[:-1], 0])
     robot.move_linear((0, 0, -50, 0, 0, 0))
+    robot.move_joints([*robot.joint_angles[:-1], 0])
 
     # collect reference image
     image_outfile = os.path.join(image_dir, 'image_0.png')
     sensor.process(image_outfile)
 
-    # drop 10mm to contact object
+    # clear object by 10mm; use as reset pose 
     clearance = (0, 0, 10, 0, 0, 0)
+    robot.move_linear(np.zeros(6) - clearance)
+    joint_angles = robot.joint_angles
 
     # ==== data collection loop ====
     for i, row in target_df.iterrows():
@@ -49,6 +51,10 @@ def collect_data(
 
         # move above the target pose
         robot.move_linear(pose - clearance)
+
+        # if sorted, don't move to reset position
+        if not task_params['sort']:
+            robot.move_joints(joint_angles)
 
     # finish 50mm above workframe origin then zero last joint 
     robot.move_linear((0, 0, -50, 0, 0, 0))

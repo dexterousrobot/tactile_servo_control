@@ -38,9 +38,9 @@ def setup_target_df(
         shear = shears[i,:]
         target_df.loc[i] = np.hstack((image_name, pose, shear))
 
-    # # shuffle and save
-    # if task_params.get('shuffle', False):
-    #     target_df = target_df.sample(frac=1).reset_index(drop=True)
+    # shuffle 
+    if task_params.get('shuffle', False):
+        target_df = target_df.sample(frac=1).reset_index(drop=True)
         
     if save_dir:
         target_file = os.path.join(save_dir, "targets.csv")

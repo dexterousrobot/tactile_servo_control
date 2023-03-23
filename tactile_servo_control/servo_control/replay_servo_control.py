@@ -17,10 +17,10 @@ from servo_control import servo_control
 def launch():
 
     robot, sensor, tasks, _, objects, device = setup_parse_args(
-        robot='sim', 
-        sensor='tactip', 
+        robot='cr', 
+        sensor='tactip_331', 
         tasks=['edge_5d'],
-        objects=['circle'],
+        objects=['saddle'],
         device='cuda'
     )
 

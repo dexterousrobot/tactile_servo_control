@@ -22,7 +22,7 @@ def launch():
         sensor='tactip_331', 
         tasks=['edge_5d'],
         models=['simple_cnn'],
-        objects=['circle'],
+        objects=['saddle'],
         device='cuda'
     )
 

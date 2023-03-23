@@ -91,7 +91,7 @@ if __name__ == "__main__":
     for model_type, task in zip(models, tasks):
 
         # set data and model dir
-        data_dir = os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'data')
+        data_dir = os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'train_+yaw')
         model_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, model_type + model_version)
 
         # load parameters

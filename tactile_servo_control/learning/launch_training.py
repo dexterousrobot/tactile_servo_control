@@ -1,5 +1,5 @@
 """
-python launch_training.py -r sim -s tactip -m simple_cnn -t surface_3d edge_2d edge_3d edge_5d
+python launch_training.py -r cr -s tactip_331 -m simple_cnn -t edge_5d
 """
 import os
 
@@ -19,7 +19,7 @@ from utils_plots import ErrorPlotter
 
 def launch(
     robot='cr', 
-    sensor='tactip',
+    sensor='tactip_331',
     tasks=['edge_5d'],
     models=['simple_cnn'],
     device='cuda'
@@ -28,24 +28,28 @@ def launch(
 
     robot_str, sensor_str, tasks, models, _, device = setup_parse_args(robot, sensor, tasks, models, device)
 
-    for task_str, model_str in zip(tasks, models):
+    for task, model_str in zip(tasks, models):
 
         # data dirs - can specify list of directories as these are combined in generator
         train_data_dirs = [
-            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task_str, 'train')
+            # os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train'),
+            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train_+yaw'),
+            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train_-yaw')
         ]
         val_data_dirs = [
-            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task_str, 'val')
+            # os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val'),
+            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val_+yaw'),
+            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val_-yaw')
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task_str, model_str + model_version)
+        save_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)
         make_dir(save_dir)
         
         # setup parameters
         learning_params, model_params, preproc_params, task_params = setup_training(
             model_str, 
-            task_str, 
+            task, 
             train_data_dirs, 
             save_dir
         )  

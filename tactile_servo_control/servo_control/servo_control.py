@@ -26,8 +26,8 @@ def servo_control(
         slider = Slider(controller.ref)
 
     # move to initial pose from 50mm above workframe
-    robot.move_joints([*robot.joint_angles[:-1], 0])
     robot.move_linear((0, 0, -50, 0, 0, 0))
+    robot.move_joints([*robot.joint_angles[:-1], 0])
 
     # zero pose and clock
     pose = [0, 0, 0, 0, 0, 0]

@@ -1,5 +1,5 @@
 """
-python process_collect_data.py -r sim -s tactip -t surface_3d edge_2d edge_3d edge_5d
+python process_collect_data.py -r cr -s tactip_331 -t edge_5d
 """
 import os
 import shutil
@@ -16,15 +16,14 @@ from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 def process(
     robot='sim', 
     sensor='tactip',
-    tasks=['surface_3d']
+    tasks=['edge_5d']
 ):
-
     dir_in_str = "data"
     dirs_out_str = ["train", "val"]
     split = 0.8
 
     # optional image processing
-    sensor_params = {#}
+    sensor_params = {
         # 'thresh': True,
         # 'dims': (128,128),
         # "circle_mask_radius": 220,
@@ -74,11 +73,11 @@ def process(
                 save_json_obj(sensor_params_out, os.path.join(dir_out, 'sensor_params'))
 
                 # populate with images
-                for image_name in targets_df[i].image_name:
-                    print(f'processed {dir_out_str}: {image_name}')
-                    image = cv2.imread(os.path.join(image_dir_in, image_name))
+                for sensor_image in targets_df[i].sensor_image:
+                    print(f'processed {dir_out_str}: {sensor_image}')
+                    image = cv2.imread(os.path.join(image_dir_in, sensor_image))
                     processed_image = process_image(image, **sensor_params)
-                    cv2.imwrite(os.path.join(image_dir_out, image_name), processed_image)
+                    cv2.imwrite(os.path.join(image_dir_out, sensor_image), processed_image)
             
             # or just point to original data if no new sensor_params
             else:

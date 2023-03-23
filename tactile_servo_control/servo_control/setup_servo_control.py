@@ -26,8 +26,8 @@ def setup_control_params(task, save_dir=None):
 
     elif task == 'edge_3d':
         control_params = {
-            'kp': [0.5, 1, 0, 0, 0, 0.5],                 
-            'ki': [0.3, 0, 0, 0, 0, 0.1],                
+            'kp': [0.5, 1, 0.5, 0, 0, 0.5],                 
+            'ki': [0.3, 0, 0.3, 0, 0, 0.1],                
             'ei_clip': [[-5, 0, -2.5, 0, 0, -45], [5, 0, 2.5, 0, 0, 45]],
             'error': 'lambda y, r: transform_euler(r, y)',  # SE(3) error
             'ref': [0, 2, 3.5, 0, 0, 0]             
@@ -35,11 +35,11 @@ def setup_control_params(task, save_dir=None):
 
     elif task == 'edge_5d':
         control_params = {
-            'kp': [0.5, 1, 0, 0, 0, 0.5],                
-            'ki': [0.3, 0, 0, 0, 0, 0.1],
+            'kp': [0.5, 1, 0.5, 0.5, 0.5, 0.5],                
+            'ki': [0.3, 0, 0.3, 0.1, 0.1, 0.1],
             'ei_clip': [[-5, 0, -2.5, -15, -15, -45], [5, 0, 2.5, 15, 15, 45]],
             'error': 'lambda y, r: transform_euler(r, y)',  # SE(3) error
-            'ref': [0, 2, 3.5, 0, 0, 0]              
+            'ref': [0, -2, 3.5, 0, 0, 0]              
         }
 
     if save_dir:

@@ -33,15 +33,13 @@ def setup_sensor_params(robot, sensor, save_dir=None):
     return sensor_params
 
 
-def setup_task_params(robot, task, option=None, save_dir=None):
+def setup_task_params(robot, task, save_dir=None):
 
     pose_lims_dict = {
-        'surface_3d': [ ( 0, 0, 1, -25, -25,    0), (0, 0, 5, 25, 25, 0) ],
+        'surface_3d': [ ( 0, 0, 1, -20, -20,    0), (0, 0, 5, 20, 20, 0) ],
         'edge_2d':    [ (-5, 0, 3,   0,   0, -180), (5, 0, 4, 0, 0, 180) ],
         'edge_3d':    [ (-5, 0, 1,   0,   0, -180), (5, 0, 5, 0, 0, 180) ],
-        'edge_5d':    [ (-5, 0, 1, -20, -20, -180),  (5, 0, 5, 20, 20, 180) ],
-        'edge_5d_+yaw': [ (-5, 0, 1, -20, -20, 0),    (5, 0, 5, 20, 20, 180) ],
-        'edge_5d_-yaw': [ (-5, 0, 1, -20, -20, -180), (5, 0, 5, 20, 20, 0) ],
+        'edge_5d':    [ (-5, 0, 1, -20, -20, -180),   (5, 0, 5, 20, 20, 180) ],
     }
     
     shear_lims_dict = {
@@ -52,13 +50,16 @@ def setup_task_params(robot, task, option=None, save_dir=None):
 
     task_params = {
         'pose_label_names': ["x", "y", "z", "Rx", "Ry", "Rz"],
-        'pose_llims': pose_lims_dict[task+option][0],
-        'pose_ulims': pose_lims_dict[task+option][1],
+        'pose_llims': pose_lims_dict[task][0],
+        'pose_ulims': pose_lims_dict[task][1],
         'shear_label_names': ["dx", "dy", "dz", "dRx", "dRy", "dRz"],
         'shear_llims': shear_lims_dict[robot][0],
         'shear_ulims': shear_lims_dict[robot][1],
         'sort': False
     }   
+
+    if robot == 'sim':
+        task_params['sort'] = True
 
     if save_dir:
         save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
@@ -94,9 +95,9 @@ def setup_env_params(robot, task, save_dir=None):
     return env_params
 
 
-def setup_collect_data(robot, sensor, task, option=None, save_dir=None):
+def setup_collect_data(robot, sensor, task, save_dir=None):
     sensor_params = setup_sensor_params(robot, sensor, save_dir)
-    task_params = setup_task_params(robot, task, option, save_dir)
+    task_params = setup_task_params(robot, task, save_dir)
     env_params = setup_env_params(robot, task, save_dir)
 
     return sensor_params, task_params, env_params

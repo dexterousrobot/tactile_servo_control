@@ -102,7 +102,9 @@ if __name__ == "__main__":
     for model_type, task in zip(models, tasks):
 
         val_data_dirs = [
-            os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val')
+            # os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val_sorted')
+            os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val_+yaw'),
+            os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val_-yaw')
         ]
 
         # set save dir

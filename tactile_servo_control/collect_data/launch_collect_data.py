@@ -19,17 +19,16 @@ def launch(
     tasks=['edge_5d']
 ):
     collect_params = {
-        'data': 2500,
+        'data': 5000,
     }
-    versions = ['_-yaw']#''#['_+yaw', '_-yaw']
 
     robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(robot, sensor, tasks)
 
-    for [task, version] in zip(tasks, versions):
+    for task in tasks:
         for dir_name, num_samples in collect_params.items():
 
             # setup save dir
-            save_dir = os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, dir_name+version)
+            save_dir = os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, dir_name)
             image_dir = os.path.join(save_dir, "images")
             make_dir(save_dir)
             make_dir(image_dir)
@@ -39,7 +38,6 @@ def launch(
                 robot_str, 
                 sensor_str,
                 task, 
-                version,
                 save_dir
             )
 
