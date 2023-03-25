@@ -4,6 +4,13 @@ import numpy as np
 
 from tactile_data.utils_data import load_json_obj, save_json_obj
 
+from tactile_servo_control.collect_data.setup_collect_data import POSE_LABEL_NAMES
+
+
+def csv_row_to_label(row):
+    pose_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES} 
+    return pose_dict
+
 
 def setup_learning(save_dir=None):
 
@@ -109,11 +116,11 @@ def setup_task(task_name, data_dirs, save_dir=None):
     Returns task specific details.
     """
 
-    label_inds_dict = {
-        'surface_3d': [   2, 3, 4   ],  # z Rx', 'Ry'
-        'edge_2d':    [0,          5],  # x Rz
-        'edge_3d':    [0, 2,       5],  # x z Rz
-        'edge_5d':    [0, 2, 3, 4, 5],  # x z Rx Ry Rz
+    target_label_names_dict = {
+        'surface_3d': ['z', 'Rx', 'Ry'],
+        'edge_2d':    ['x', 'Rz'],
+        'edge_3d':    ['x', 'z', 'Rz'],
+        'edge_5d':    ['x', 'z', 'Rx', 'Ry', 'Rz'],
     }
 
     # get data limits from training data
@@ -123,13 +130,13 @@ def setup_task(task_name, data_dirs, save_dir=None):
         pose_llims.append(data_task_params['pose_llims'])
         pose_ulims.append(data_task_params['pose_ulims'])
 
-    pose_label_names = data_task_params['pose_label_names']
-
     task_params = {
-        'pose_label_names': pose_label_names,
-        'target_label_names': [pose_label_names[i] for i in label_inds_dict[task_name]],
+        'target_label_names': target_label_names_dict[task_name],
         'pose_llims': tuple(np.min(pose_llims, axis=0).astype(float)),
-        'pose_ulims': tuple(np.max(pose_ulims, axis=0).astype(float))
+        'pose_ulims': tuple(np.max(pose_ulims, axis=0).astype(float)),
+        'pose_label_names': POSE_LABEL_NAMES,
+        'pos_label_names': POSE_LABEL_NAMES[:3],
+        'rot_label_names': POSE_LABEL_NAMES[3:],
     }
 
     # save parameters
@@ -148,5 +155,10 @@ def setup_training(model_type, task, data_dirs, save_dir=None):
     if save_dir:
         shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
         shutil.copy(os.path.join(data_dirs[0], 'sensor_params.json'), save_dir)
+
+        # if there is sensor process params, overwrite
+        sensor_proc_params_file = os.path.join(data_dirs[0], 'sensor_process_params.json')
+        if os.path.isfile(sensor_proc_params_file): 
+            shutil.copyfile(sensor_proc_params_file, os.path.join(save_dir, 'sensor_params.json'))           
 
     return learning_params, model_params, preproc_params, task_params

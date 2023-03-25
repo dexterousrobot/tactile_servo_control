@@ -1,6 +1,10 @@
 import os
+import numpy as np
 
 from tactile_data.utils_data import save_json_obj
+
+POSE_LABEL_NAMES = ["x", "y", "z", "Rx", "Ry", "Rz"]
+SHEAR_LABEL_NAMES = ["dx", "dy", "dz", "dRx", "dRy", "dRz"]
 
 
 def setup_sensor_params(robot, sensor, save_dir=None):
@@ -49,17 +53,17 @@ def setup_task_params(robot, task, save_dir=None):
     }
 
     task_params = {
-        'pose_label_names': ["x", "y", "z", "Rx", "Ry", "Rz"],
+        'pose_label_names': POSE_LABEL_NAMES,
         'pose_llims': pose_lims_dict[task][0],
         'pose_ulims': pose_lims_dict[task][1],
-        'shear_label_names': ["dx", "dy", "dz", "dRx", "dRy", "dRz"],
+        'shear_label_names': SHEAR_LABEL_NAMES,
         'shear_llims': shear_lims_dict[robot][0],
         'shear_ulims': shear_lims_dict[robot][1],
         'sort': False
     }   
 
-    if robot == 'sim':
-        task_params['sort'] = True
+    # if robot == 'sim':
+    #     task_params['sort'] = 'Rz'
 
     if save_dir:
         save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
@@ -69,7 +73,7 @@ def setup_task_params(robot, task, save_dir=None):
 
 def setup_env_params(robot, task, save_dir=None):
 
-    work_frame_df = {
+    work_frame_dict = {
         'cr_edge':       [ (20, -475, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0) ],
         'cr_surface':    [ (20, -425, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0) ],
         'mg400_edge':    [ (285,  0, 0, -180, 0, 0),     (0, 0, -50, 0, 0, 0) ],
@@ -82,8 +86,8 @@ def setup_env_params(robot, task, save_dir=None):
         'robot': robot,
         'stim_name': 'square',
         'speed': 50, 
-        'work_frame': work_frame_df[robot+'_'+task[:-3]][0],
-        'tcp_pose': work_frame_df[robot+'_'+task[:-3]][1]
+        'work_frame': work_frame_dict[robot+'_'+task[:-3]][0],
+        'tcp_pose': work_frame_dict[robot+'_'+task[:-3]][1]
     }
 
     if robot == 'sim':

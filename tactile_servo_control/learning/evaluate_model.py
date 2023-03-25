@@ -12,6 +12,7 @@ from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 
+from setup_training import csv_row_to_label
 from utils_learning import LabelEncoder
 from utils_plots import ErrorPlotter
 
@@ -102,9 +103,7 @@ if __name__ == "__main__":
     for model_type, task in zip(models, tasks):
 
         val_data_dirs = [
-            # os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val_sorted')
-            os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val_+yaw'),
-            os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val_-yaw')
+            os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val')
         ]
 
         # set save dir
@@ -135,7 +134,7 @@ if __name__ == "__main__":
 
         val_generator = ImageDataGenerator(
             data_dirs=val_data_dirs,
-            csv_row_to_label=label_encoder.csv_row_to_label,
+            csv_row_to_label=csv_row_to_label,
             **preproc_params['image_processing']
         )
 

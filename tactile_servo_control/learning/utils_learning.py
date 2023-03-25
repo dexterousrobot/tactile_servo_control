@@ -1,5 +1,5 @@
 """
-python utils_learning.py -r cr -s tactip_331 -m simple_cnn -t edge_2d
+python utils_learning.py -r cr -s tactip_331 -m simple_cnn -t edge_2dself.pose_label_names
 """
 import os
 import pickle
@@ -26,7 +26,9 @@ class LabelEncoder:
 
     def __init__(self, task_params, device='cuda'):
         self.device = device
-        self.label_names = task_params['pose_label_names']
+        self.pose_label_names = task_params['pose_label_names']
+        self.pos_label_names = task_params['pos_label_names']
+        self.rot_label_names = task_params['rot_label_names']
         self.target_label_names = task_params['target_label_names']
 
         # create tensors for pose limits
@@ -38,20 +40,32 @@ class LabelEncoder:
 
     @property
     def out_dim(self):
-        label_dims = [self.target_label_names.count(p) for p in self.label_names[:3]] \
-                    + [2*self.target_label_names.count(p) for p in self.label_names[3:]]
+        label_dims = [self.target_label_names.count(p) for p in self.pose_label_names[:3]] \
+                    + [2*self.target_label_names.count(p) for p in self.pose_label_names[3:]]
         return sum(label_dims)
 
 
-    @staticmethod
-    def csv_row_to_label(row):
-        POSE_LABEL_NAMES = ["x", "y", "z", "Rx", "Ry", "Rz"]
-        pose_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES} 
-        # pose_dict = {label: np.array(row[label]) for label in self.label_names} 
-        # print(pose_dict)
-        return pose_dict
-    
+    def encode_norm(self, target, label_name):
+        llim = self.llims_torch[self.pose_label_names.index(label_name)]
+        ulim = self.ulims_torch[self.pose_label_names.index(label_name)]
+        norm_target = (((target - llim) / (ulim - llim)) * 2) - 1
+        return norm_target.unsqueeze(dim=1)
 
+    def decode_norm(self, prediction, label_name):
+        llim = self.llims_np[self.pose_label_names.index(label_name)]
+        ulim = self.ulims_np[self.pose_label_names.index(label_name)]
+        return (((prediction + 1) / 2) * (ulim - llim)) + llim 
+
+    def encode_circnorm(self, target):
+        ang = target * np.pi/180
+        return [torch.sin(ang).float().to(self.device).unsqueeze(dim=1),
+                torch.cos(ang).float().to(self.device).unsqueeze(dim=1)]
+
+    def decode_circnorm(self, vec_prediction):
+        pred_rot = torch.atan2(*vec_prediction)
+        return pred_rot * 180/np.pi
+    
+    
     def encode_label(self, labels_dict):
         """
         Process raw pose data to NN friendly label for prediction.
@@ -68,22 +82,14 @@ class LabelEncoder:
             target = labels_dict[label_name].float().to(self.device)
 
             # normalize pose label within limits
-            if label_name in self.label_names[:3]:
-                llim = self.llims_torch[self.label_names.index(label_name)]
-                ulim = self.ulims_torch[self.label_names.index(label_name)]
-                norm_target = (((target - llim) / (ulim - llim)) * 2) - 1
-                encoded_pose.append(norm_target.unsqueeze(dim=1))
+            if label_name in self.pos_label_names:
+                encoded_pose.append(self.encode_norm(target, label_name))
 
             # sine/cosine encoding of angle
-            if label_name in self.label_names[3:]:
-                ang = target * np.pi/180
-                encoded_pose.append(torch.sin(ang).float().to(self.device).unsqueeze(dim=1))
-                encoded_pose.append(torch.cos(ang).float().to(self.device).unsqueeze(dim=1))
+            if label_name in self.rot_label_names:
+                encoded_pose.extend(self.encode_circnorm(target))
 
-        # combine targets to make one label tensor
-        labels = torch.cat(encoded_pose, 1)
-
-        return labels
+        return torch.cat(encoded_pose, 1)
 
 
     def decode_label(self, outputs):
@@ -94,34 +100,21 @@ class LabelEncoder:
         To    -> {x, y, z, Rx, Ry, Rz}
         """
 
-        # decode preictable label to pose
-        decoded_pose = {
-            'x': torch.zeros(outputs.shape[0]),
-            'y': torch.zeros(outputs.shape[0]),
-            'z': torch.zeros(outputs.shape[0]),
-            'Rx': torch.zeros(outputs.shape[0]),
-            'Ry': torch.zeros(outputs.shape[0]),
-            'Rz': torch.zeros(outputs.shape[0]),
-        }
+        # decode predicted label to pose
+        decoded_pose = {label: torch.zeros(outputs.shape[0]) for label in self.pose_label_names}
 
-        label_name_idx = 0
+        ind = 0
         for label_name in self.target_label_names:
 
-            if label_name in self.label_names[:3]:
-                predictions = outputs[:, label_name_idx].detach().cpu()
-                llim = self.llims_np[self.label_names.index(label_name)]
-                ulim = self.ulims_np[self.label_names.index(label_name)]
-                decoded_predictions = (((predictions + 1) / 2) * (ulim - llim)) + llim
-                decoded_pose[label_name] = decoded_predictions
-                label_name_idx += 1
+            if label_name in self.pos_label_names:
+                prediction = outputs[:, ind].detach().cpu()
+                decoded_pose[label_name] = self.decode_norm(prediction, label_name)
+                ind += 1
 
-            if label_name in self.label_names[3:]:
-                sin_predictions = outputs[:, label_name_idx].detach().cpu()
-                cos_predictions = outputs[:, label_name_idx + 1].detach().cpu()
-                pred_rot = torch.atan2(sin_predictions, cos_predictions)
-                pred_rot = pred_rot * (180.0 / np.pi)
-                decoded_pose[label_name] = pred_rot
-                label_name_idx += 2
+            if label_name in self.rot_label_names:
+                vec_prediction = [outputs[:, ind].detach().cpu(), outputs[:, ind+1].detach().cpu()]
+                decoded_pose[label_name] = self.decode_circnorm(vec_prediction)
+                ind += 2
 
         return decoded_pose
 
@@ -145,15 +138,15 @@ class LabelEncoder:
         Error metric for regression problem, returns dict of errors in interpretable units.
         Position error (mm), Rotation error (degrees).
         """
-        err_df = pd.DataFrame(columns=self.label_names)
+        err_df = pd.DataFrame(columns=self.pose_label_names)
         for label_name in self.target_label_names :
 
-            if label_name in self.label_names[:3]:
+            if label_name in self.pos_label_names:
                 abs_err = torch.abs(
                     labels[label_name] - predictions[label_name]
                 ).detach().cpu().numpy()
 
-            if label_name in self.label_names[3:]:
+            if label_name in self.rot_label_names:
                 # convert rad
                 targ_rot = labels[label_name] * np.pi/180
                 pred_rot = predictions[label_name] * np.pi/180
@@ -161,7 +154,7 @@ class LabelEncoder:
                 # Calculate angle difference, taking into account periodicity (thanks ChatGPT)
                 abs_err = torch.abs(
                     torch.atan2(torch.sin(targ_rot - pred_rot), torch.cos(targ_rot - pred_rot))
-                ).detach().cpu().numpy() * (180.0 / np.pi)
+                ).detach().cpu().numpy() * 180/np.pi
 
             err_df[label_name] = abs_err
 
@@ -175,15 +168,15 @@ class LabelEncoder:
         """
 
         batch_size = err_df.shape[0]
-        acc_df = pd.DataFrame(columns=[*self.label_names, 'overall_acc'])
+        acc_df = pd.DataFrame(columns=[*self.pose_label_names, 'overall_acc'])
         overall_correct = np.ones(batch_size, dtype=bool)
         for label_name in self.target_label_names :
 
-            if label_name in self.label_names[:3]:
+            if label_name in self.pos_label_names:
                 abs_err = err_df[label_name]
                 correct = (abs_err < POS_TOL)
 
-            if label_name in self.label_names[3:]:
+            if label_name in self.rot_label_names:
                 abs_err = err_df[label_name]
                 correct = (abs_err < ROT_TOL)
 
@@ -206,7 +199,7 @@ class LabelledModel:
         self.model = model
         self.image_processing_params = image_processing_params
         self.label_encoder = label_encoder 
-        self.label_names = label_encoder.label_names
+        self.pose_label_names = label_encoder.pose_label_names
         self.target_label_names = label_encoder.target_label_names
         self.device = device
 
@@ -235,7 +228,7 @@ class LabelledModel:
         predictions_arr = np.zeros(6)
         for label_name in self.target_label_names:
             predicted_val = predictions_dict[label_name].detach().cpu().numpy() 
-            predictions_arr[self.label_names.index(label_name)] = predicted_val            
+            predictions_arr[self.pose_label_names.index(label_name)] = predicted_val            
             with np.printoptions(precision=2, suppress=True):
                 print(label_name, predicted_val, end=" ")
 
@@ -248,7 +241,7 @@ if __name__ == '__main__':
         robot='cr', 
         sensor='tactip_331',
         tasks=['edge_5d'],
-        models=['simple_cnn'],
+        models=['posenet_cnn'],
         device='cuda'
     )
 

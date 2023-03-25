@@ -12,7 +12,7 @@ from tactile_learning.utils.utils_learning import seed_everything
 from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 
 from evaluate_model import evaluate_model
-from setup_training import setup_training
+from setup_training import setup_training, csv_row_to_label
 from utils_learning import LabelEncoder
 from utils_plots import ErrorPlotter
 
@@ -30,16 +30,12 @@ def launch(
 
     for task, model_str in zip(tasks, models):
 
-        # data dirs - can specify list of directories as these are combined in generator
+        # data dirs - list of directories combined in generator
         train_data_dirs = [
-            # os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train'),
-            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train_+yaw'),
-            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train_-yaw')
+            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train'),
         ]
         val_data_dirs = [
-            # os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val'),
-            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val_+yaw'),
-            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val_-yaw')
+            os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val'),
         ]
 
         # setup save dir
@@ -73,12 +69,12 @@ def launch(
         # set generators and loaders
         train_generator = ImageDataGenerator(
             train_data_dirs,
-            label_encoder.csv_row_to_label,
+            csv_row_to_label,
             **{**preproc_params['image_processing'], **preproc_params['augmentation']}
         )
         val_generator = ImageDataGenerator(
             val_data_dirs,
-            label_encoder.csv_row_to_label,
+            csv_row_to_label,
             **preproc_params['image_processing']
         )
 

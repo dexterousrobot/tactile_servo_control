@@ -13,81 +13,94 @@ from tactile_image_processing.image_transforms import process_image
 from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 
 
-def process(
-    robot='sim', 
-    sensor='tactip',
-    tasks=['edge_5d']
-):
-    dir_in_str = "data"
-    dirs_out_str = ["train", "val"]
-    split = 0.8
+def split(path, dir_in_str, dirs_out, frac=0.8):
 
-    # optional image processing
-    sensor_params = {
-        # 'thresh': True,
-        # 'dims': (128,128),
-        # "circle_mask_radius": 220,
-        # "bbox": (10, 10, 430, 430) # "bbox": (10, 10, 310, 310)
-    }
+    # load target df
+    targets_df = pd.read_csv(os.path.join(path, dir_in_str, 'targets.csv'))
 
-    robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(robot, sensor, tasks)
+    # indices to split data
+    np.random.seed(0) # make predictable
+    inds_true = np.random.choice([True, False], size=len(targets_df), p=[frac, 1-frac])
+    inds = [inds_true, ~inds_true]
 
-    for task_str in tasks:
+    # iterate over split
+    for dir_out_str, ind in zip(dirs_out, inds):
+        dir_in = os.path.join(path, dir_in_str)
+        dir_out = os.path.join(path, dir_out_str)
 
-        # load target df
-        path = os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task_str)
-        targets_df = pd.read_csv(os.path.join(path, dir_in_str, 'targets.csv'))
-
-        # indices to split data
-        np.random.seed(0) # make predictable
-        inds_true = np.random.choice([True, False], size=len(targets_df), p=[split, 1-split])
-        inds = [inds_true, ~inds_true]
-
-        # iterate over split
-        for dir_out_str, i in zip(dirs_out_str, inds):
-
-            dir_in = os.path.join(path, dir_in_str)
-            dir_out = os.path.join(path, dir_out_str)
-
-            # copy task and env parameters
+        # if new directory, copy task, env and sensor parameters
+        if dir_out != dir_in:
             make_dir(dir_out, check=False)
             shutil.copy(os.path.join(dir_in, 'task_params.json'), dir_out)
             shutil.copy(os.path.join(dir_in, 'env_params.json'), dir_out)
-            
-            # process image data if new sensor_params supplied
-            if sensor_params: 
-                
-                # create new image directory
-                image_dir_in = os.path.join(dir_in, 'images')
-                image_dir_out = os.path.join(dir_out, 'processed_images')
-                os.makedirs(image_dir_out, exist_ok=True)
-                
-                # merge new and old sensor_params
-                sensor_params_in = load_json_obj(os.path.join(dir_in, 'sensor_params'))
-                sensor_params_out = {**sensor_params_in, **sensor_params}
-                
-                if 'bbox' in sensor_params_in and 'bbox' in sensor_params:
-                    b, b_in = sensor_params['bbox'], sensor_params_in['bbox']
-                    sensor_params_out['bbox'] = [b_in[0]+b[0], b_in[1]+b[1], b_in[0]+b[2], b_in[1]+b[3]]
+            shutil.copy(os.path.join(dir_in, 'sensor_params.json'), dir_out)  
+        
+            # create dataframe pointing to original images (to avoid copying)
+            targets_df.loc[ind, 'sensor_image'] = \
+                rf'../../{dir_in_str}/images/' + targets_df[ind].sensor_image.map(str)
+            targets_df[ind].to_csv(os.path.join(dir_out, 'targets.csv'), index=False)
 
-                save_json_obj(sensor_params_out, os.path.join(dir_out, 'sensor_params'))
 
-                # populate with images
-                for sensor_image in targets_df[i].sensor_image:
-                    print(f'processed {dir_out_str}: {sensor_image}')
-                    image = cv2.imread(os.path.join(image_dir_in, sensor_image))
-                    processed_image = process_image(image, **sensor_params)
-                    cv2.imwrite(os.path.join(image_dir_out, sensor_image), processed_image)
-            
-            # or just point to original data if no new sensor_params
-            else:
-                shutil.copy(os.path.join(dir_in, 'sensor_params.json'), dir_out)  
-                targets_df.loc[i,'sensor_image'] = \
-                    rf'../../{dir_in_str}/images/' + targets_df[i].sensor_image.map(str)
-            
-            # save targets
-            targets_df[i].to_csv(os.path.join(dir_out, 'targets.csv'), index=False)
+def process(path, dirs, process_params={}):
+
+    # iterate over dirs
+    for dir in dirs:
+
+        # paths
+        image_dir = os.path.join(path, dir, 'images')
+        proc_image_dir = os.path.join(path, dir, 'processed_images')
+        os.makedirs(proc_image_dir, exist_ok=True)
+        
+        # process images
+        targets_df = pd.read_csv(os.path.join(path, dir, 'targets.csv'))
+        for sensor_image in targets_df.sensor_image:
+            print(f'processed {dir}: {sensor_image}')
+
+            image = cv2.imread(os.path.join(image_dir, sensor_image))
+            proc_image = process_image(image, **process_params)
+            image_path, proc_sensor_image = os.path.split(sensor_image)
+            cv2.imwrite(os.path.join(proc_image_dir, proc_sensor_image), proc_image)
+
+        # if targets have paths remove them
+        if image_path:
+            targets_df.loc[:, 'sensor_image'] = \
+                targets_df.sensor_image.str.split('/', expand=True).iloc[:,-1]
+            targets_df.to_csv(os.path.join(path, dir, 'targets.csv'), index=False)
+
+        # save merged sensor_params and process_params
+        sensor_params = load_json_obj(os.path.join(path, dir, 'sensor_params'))
+        sensor_proc_params = {**sensor_params, **process_params}
+
+        if 'bbox' in sensor_params and 'bbox' in sensor_proc_params:
+            b, pb = sensor_params['bbox'], sensor_proc_params['bbox']
+            sensor_params['bbox'] = [b[0]+pb[0], b[1]+pb[1], b[0]+pb[2], b[1]+pb[3]]
+        
+        save_json_obj(sensor_proc_params, os.path.join(path, dir, 'sensor_process_params'))
+
+
+def main(
+    robot='cr', 
+    sensor='tactip_331',
+    tasks=['edge_5d']
+):
+    robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(robot, sensor, tasks)
+
+    dir_in = "data"
+    dirs_out = ["train", "val"]
+    frac = 0.8
+
+    process_params = {
+        'thresh': True,
+        'dims': (128,128),
+        "circle_mask_radius": 220,
+        "bbox": (10, 10, 430, 430) # "bbox": (10, 10, 310, 310)
+    }
+
+    for task in tasks:
+        path = os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task)
+        split(path, dir_in, dirs_out, frac)
+        process(path, dirs_out, process_params)
 
 
 if __name__ == "__main__":
-    process()
+    main()
