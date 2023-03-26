@@ -1,24 +1,23 @@
-# -*- coding: utf-8 -*-
 import os
 import time as t
 import numpy as np
 
-from cri.transforms import inv_transform_euler, transform_euler
+from cri.transforms import inv_transform_euler
 from user_input.slider import Slider
-from utils_servo_control import PlotContour3D as PlotContour
+
+from utils_plots import PlotContour3D as PlotContour
 
 
 def servo_control(
-            robot, 
-            sensor, 
-            model,
-            controller,
-            image_dir,
-            num_iterations=100,
-            show_plot=True,
-            show_slider=False,
-            servo_mode=False
-        ):
+    robot, 
+    sensor, 
+    pose_model,
+    controller,
+    image_dir,
+    task_params,
+    show_plot=True,
+    show_slider=False,
+):
 
     # initialize peripherals
     if show_plot:
@@ -27,26 +26,27 @@ def servo_control(
         slider = Slider(controller.ref)
 
     # move to initial pose from 50mm above workframe
-    robot.move_joints([*robot.joint_angles[:-1], 0])
     robot.move_linear((0, 0, -50, 0, 0, 0))
+    robot.move_joints([*robot.joint_angles[:-1], 0])
 
     # zero pose and clock
     pose = [0, 0, 0, 0, 0, 0]
     robot.move_linear(pose)
-    t_0 = t.time()
 
     # turn on servo mode if set
-    robot.controller.servo_mode = servo_mode 
+    robot.controller.servo_mode = task_params.get('servo_mode', False) 
+    robot.controller.time_delay = task_params.get('time_delay', 0.0) 
 
-    # iterate through servo control
-    for i in range(num_iterations):
+    # timed iteration through servo control
+    t_0 = t.time()
+    for i in range(task_params['num_iterations']):
 
         # get current tactile observation
         image_outfile = os.path.join(image_dir, f'image_{i}.png')
         tactile_image = sensor.process(image_outfile)
 
         # predict pose from observations
-        pred_pose = model.predict(tactile_image)
+        pred_pose = pose_model.predict(tactile_image)
 
         # servo control output in sensor frame
         servo = controller.update(pred_pose)

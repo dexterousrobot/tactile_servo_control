@@ -1,18 +1,23 @@
-# -*- coding: utf-8 -*-
 import os
-import pandas as pd
+import shutil
 import numpy as np
 
-from tactile_learning.utils.utils_learning import load_json_obj, save_json_obj
+from tactile_data.utils_data import load_json_obj, save_json_obj
+
+from tactile_servo_control.collect_data.setup_collect_data import POSE_LABEL_NAMES
 
 
-def setup_learning(data_dirs, save_dir=None):
+def csv_row_to_label(row):
+    pose_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES} 
+    return pose_dict
 
-    # Parameters
+
+def setup_learning(save_dir=None):
+
     learning_params = {
         'seed': 42,
         'batch_size': 16,
-        'epochs': 100,
+        'epochs': 200,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -38,15 +43,16 @@ def setup_learning(data_dirs, save_dir=None):
         'noise_var': None,
     }
 
-    sensor_params = load_json_obj(os.path.join(data_dirs[0], 'sensor_params'))
-    sensor_params['image_processing'] = image_processing_params
-    sensor_params['augmentation'] = augmentation_params
+    preproc_params = {
+        'image_processing': image_processing_params,
+        'augmentation': augmentation_params
+    }
 
     if save_dir:
         save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
-        save_json_obj(sensor_params, os.path.join(save_dir, 'sensor_params'))
+        save_json_obj(preproc_params, os.path.join(save_dir, 'preproc_params'))
 
-    return learning_params, sensor_params
+    return learning_params, preproc_params
 
 
 def setup_model(model_type, save_dir=None):
@@ -110,28 +116,27 @@ def setup_task(task_name, data_dirs, save_dir=None):
     Returns task specific details.
     """
 
-    task_params_df = pd.DataFrame(
-        columns = ['task_name', 'label_names'],
-        data = [
-                  ['surface_2d', ['y', 'Rz']],
-                  ['surface_3d', ['z', 'Rx', 'Ry']],
-                  ['edge_2d',    ['x', 'Rz']],
-                  ['edge_3d',    ['x', 'z', 'Rz']],
-                  ['edge_5d',    ['x', 'z', 'Rx', 'Ry', 'Rz']],
-        ]
-    )
+    target_label_names_dict = {
+        'surface_3d': ['z', 'Rx', 'Ry'],
+        'edge_2d':    ['x', 'Rz'],
+        'edge_3d':    ['x', 'z', 'Rz'],
+        'edge_5d':    ['x', 'z', 'Rx', 'Ry', 'Rz'],
+    }
 
+    # get data limits from training data
     pose_llims, pose_ulims = [], []
     for data_dir in data_dirs:
-        pose_params = load_json_obj(os.path.join(data_dir, 'pose_params'))
-        pose_llims.append(pose_params['pose_llims'])
-        pose_ulims.append(pose_params['pose_ulims'])
+        data_task_params = load_json_obj(os.path.join(data_dir, 'task_params'))
+        pose_llims.append(data_task_params['pose_llims'])
+        pose_ulims.append(data_task_params['pose_ulims'])
 
-    query_str = f"task_name=='{task_name}'"
     task_params = {
-        'label_names': task_params_df.query(query_str)['label_names'].iloc[0],
-        'pose_llims': list(np.min(pose_llims, axis=0).astype(float)),
-        'pose_ulims': list(np.max(pose_ulims, axis=0).astype(float))
+        'target_label_names': target_label_names_dict[task_name],
+        'pose_llims': tuple(np.min(pose_llims, axis=0).astype(float)),
+        'pose_ulims': tuple(np.max(pose_ulims, axis=0).astype(float)),
+        'pose_label_names': POSE_LABEL_NAMES,
+        'pos_label_names': POSE_LABEL_NAMES[:3],
+        'rot_label_names': POSE_LABEL_NAMES[3:],
     }
 
     # save parameters
@@ -139,3 +144,21 @@ def setup_task(task_name, data_dirs, save_dir=None):
         save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
 
     return task_params
+
+
+def setup_training(model_type, task, data_dirs, save_dir=None):
+    learning_params, preproc_params = setup_learning(save_dir)
+    model_params = setup_model(model_type, save_dir)
+    task_params = setup_task(task, data_dirs, save_dir)
+
+    # retain data parameters
+    if save_dir:
+        shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
+        shutil.copy(os.path.join(data_dirs[0], 'sensor_params.json'), save_dir)
+
+        # if there is sensor process params, overwrite
+        sensor_proc_params_file = os.path.join(data_dirs[0], 'sensor_process_params.json')
+        if os.path.isfile(sensor_proc_params_file): 
+            shutil.copyfile(sensor_proc_params_file, os.path.join(save_dir, 'sensor_params.json'))           
+
+    return learning_params, model_params, preproc_params, task_params

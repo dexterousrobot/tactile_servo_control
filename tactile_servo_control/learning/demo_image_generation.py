@@ -1,37 +1,34 @@
-# -*- coding: utf-8 -*-
 """
-python demo_image_generation.py -r Sim -t edge_2d
+python demo_image_generation.py -r sim -s tactip -t edge_2d
 """
 import os
 
-from setup_learning import setup_learning
-from utils_learning import csv_row_to_label
-
+from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_learning.supervised.image_generator import demo_image_generation
+from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 
-from tactile_servo_control.collect_data.utils_collect_data import setup_parse
-from tactile_servo_control import BASE_DATA_PATH
+from setup_training import setup_learning, csv_row_to_label
 
 
 if __name__ == '__main__':
 
-    input_args = {
-        'tasks':  [['edge_2d'],    "['surface_3d', 'edge_2d', 'edge_3d', 'edge_5d']"],
-        'robot':  ['CR',           "['Sim', 'MG400', 'CR']"]
-    }
-    tasks, robot = setup_parse(input_args)
+    robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(
+        robot='sim', 
+        sensor='tactip',
+        tasks=['edge_5d'],
+    )
 
     data_dirs = [
-        *[os.path.join(BASE_DATA_PATH, robot, task, 'train') for task in tasks],
-        *[os.path.join(BASE_DATA_PATH, robot, task, 'val') for task in tasks]
+        *[os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train') for task in tasks],
+        *[os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'val') for task in tasks]
     ]
 
-    learning_params, sensor_params = setup_learning(data_dirs)
+    learning_params, preproc_params = setup_learning()
 
     demo_image_generation(
         data_dirs,
         csv_row_to_label,
         learning_params,
-        sensor_params['image_processing'],
+        preproc_params['image_processing'],
         {} # sensor_params['augmentation']
     )

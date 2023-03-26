@@ -1,24 +1,21 @@
 import cv2
 
-# from tactile_gym_servo_control.utils.image_transforms import process_image
 from tactile_image_processing.image_transforms import process_image
 
 
 class SimSensor:
-    def __init__(self, embodiment, sensor_params={}):  
+    def __init__(self, sensor_params={}, embodiment={}):  
         self.sensor_params = sensor_params
         self.embodiment = embodiment
-        # self.sensor = embodiment.controller._client._sim_env
 
     def read(self):
         img =  self.embodiment.get_tactile_observation()
-        # img =  self.sensor.get_tactile_observation()
         return img
 
     def process(self, outfile=None):
         img =  self.read()
         img = process_image(img, **self.sensor_params)
-        if outfile is not None:
+        if outfile:
             cv2.imwrite(outfile, img)
         return img
 
@@ -31,18 +28,33 @@ class RealSensor:
 
         self.cam = cv2.VideoCapture(source)
         self.cam.set(cv2.CAP_PROP_EXPOSURE, exposure)
-        for _ in range(5): self.cam.read() # Hack - camera transient
+        for _ in range(5): 
+            self.cam.read() # Hack - initial camera transient
 
     def read(self):
-        self.cam.read() # Hack - throw one away - buffering issue
+        self.cam.read() # Hack - throw one away - buffering issue (note - halves frame rate!)
         _, img = self.cam.read()
         return img
 
     def process(self, outfile=None):
         img = self.read()
         img = process_image(img, **self.sensor_params)
-        if outfile is not None:
+        if outfile:
             cv2.imwrite(outfile, img)
+        return img
+
+
+class ReplaySensor:
+    def __init__(self, sensor_params={}):  
+        self.sensor_params = sensor_params
+
+    def read(self, outfile):
+        img = cv2.imread(outfile)
+        return img
+
+    def process(self, outfile):
+        img = self.read(outfile)        
+        img = process_image(img, **self.sensor_params)
         return img
 
 

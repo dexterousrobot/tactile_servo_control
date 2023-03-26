@@ -1,64 +1,10 @@
-# -*- coding: utf-8 -*-
-import os
 import numpy as np
-import torch
-from torch.autograd import Variable
 
 import matplotlib
 matplotlib.use("TkAgg") # change backend to stop plt stealing focus
 import matplotlib.pylab as plt
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
 from cri.transforms import quat2euler, euler2quat, inv_transform
-from tactile_servo_control.learning.utils_learning import POSE_LABEL_NAMES
-from tactile_image_processing.image_transforms import process_image
-
-
-class PoseModel:
-    def __init__(self,
-        model, 
-        image_processing_params, 
-        label_encoder,
-        device='cpu'
-    ):
-        self.model = model
-        self.image_processing_params = image_processing_params
-        self.pose_encoder = label_encoder 
-        self.label_names = label_encoder.target_label_names
-        self.device = device
-
-    def predict(self, tactile_image):
-
-        processed_image = process_image(
-            tactile_image,
-            gray=False,
-            **self.image_processing_params
-        )
-
-        # channel first for pytorch
-        processed_image = np.rollaxis(processed_image, 2, 0)
-
-        # add batch dim
-        processed_image = processed_image[np.newaxis, ...]
-
-        # perform inference with the trained model
-        model_input = Variable(torch.from_numpy(processed_image)).float().to(self.device)
-        outputs = self.model(model_input)
-
-        # decode the prediction
-        predictions_dict = self.pose_encoder.decode_label(outputs)
-
-        print("\n Predictions: ", end="")
-        predictions_arr = np.zeros(6)
-        for label_name in self.label_names:
-            predicted_val = predictions_dict[label_name].detach().cpu().numpy() 
-            predictions_arr[POSE_LABEL_NAMES.index(label_name)] = predicted_val
-            
-            with np.printoptions(precision=2, suppress=True):
-                print(label_name, predicted_val, end=" ")
-
-        return predictions_arr
 
 
 def move_figure(f, x, y):
