@@ -1,5 +1,4 @@
 import os
-import numpy as np
 
 from tactile_data.utils_data import save_json_obj
 
@@ -18,7 +17,7 @@ def setup_sensor_params(robot, sensor, save_dir=None):
     if robot == 'sim':
         sensor_params = {
             "type": "standard_tactip",
-            "image_size": (128, 128),
+            "image_size": (256, 256),
             "show_tactile": True
         }
 
@@ -40,10 +39,10 @@ def setup_sensor_params(robot, sensor, save_dir=None):
 def setup_task_params(robot, task, save_dir=None):
 
     pose_lims_dict = {
-        'surface_3d': [ ( 0, 0, 1, -20, -20,    0), (0, 0, 5, 20, 20, 0) ],
+        'surface_3d': [ ( 0, 0, 1, -25, -25,    0), (0, 0, 5, 25, 25, 0) ],
         'edge_2d':    [ (-5, 0, 3,   0,   0, -180), (5, 0, 4, 0, 0, 180) ],
         'edge_3d':    [ (-5, 0, 1,   0,   0, -180), (5, 0, 5, 0, 0, 180) ],
-        'edge_5d':    [ (-5, 0, 1, -20, -20, -180),   (5, 0, 5, 20, 20, 180) ],
+        'edge_5d':    [ (-5, 0, 1, -25, -25, -180), (5, 0, 5, 25, 25, 180) ],
     }
     
     shear_lims_dict = {
@@ -59,11 +58,12 @@ def setup_task_params(robot, task, save_dir=None):
         'shear_label_names': SHEAR_LABEL_NAMES,
         'shear_llims': shear_lims_dict[robot][0],
         'shear_ulims': shear_lims_dict[robot][1],
+        'sample_disk': True,
         'sort': False
     }   
 
-    # if robot == 'sim':
-    #     task_params['sort'] = 'Rz'
+    if robot == 'sim':
+        task_params['sort'] = 'Rz'
 
     if save_dir:
         save_json_obj(task_params, os.path.join(save_dir, 'task_params'))

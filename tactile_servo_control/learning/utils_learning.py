@@ -40,8 +40,8 @@ class LabelEncoder:
 
     @property
     def out_dim(self):
-        label_dims = [self.target_label_names.count(p) for p in self.pose_label_names[:3]] \
-                    + [2*self.target_label_names.count(p) for p in self.pose_label_names[3:]]
+        label_dims = [self.target_label_names.count(p) for p in self.pos_label_names] \
+                    + [2*self.target_label_names.count(p) for p in self.rot_label_names]
         return sum(label_dims)
 
 
