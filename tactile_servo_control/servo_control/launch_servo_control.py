@@ -29,23 +29,23 @@ def launch():
     model_version = ''
     run_version = ''
 
-    for task_str, model_str, object_str in zip(tasks, models, objects):
+    for task, model_str, object_str in zip(tasks, models, objects):
         
         # setup save dir
-        save_dir = os.path.join(BASE_RUNS_PATH, robot_str+'_'+sensor_str, task_str, object_str + run_version)
+        save_dir = os.path.join(BASE_RUNS_PATH, robot_str+'_'+sensor_str, task, object_str + run_version)
         image_dir = os.path.join(save_dir, "images")
         make_dir(save_dir, check=False)
         make_dir(image_dir, check=False)
 
         # load model, task and preproc parameters
-        model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task_str, model_str + model_version)
+        model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
         sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))
 
         # setup control and update env parameters from data_dir
         control_params, env_params, task_params = setup_servo_control(
-            task_str, 
+            task, 
             object_str, 
             model_str, 
             model_dir,

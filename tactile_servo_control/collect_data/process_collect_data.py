@@ -19,7 +19,7 @@ def split(path, dir_in_str, dirs_out, frac=0.8):
     targets_df = pd.read_csv(os.path.join(path, dir_in_str, 'targets.csv'))
 
     # indices to split data
-    np.random.seed(0) # make predictable
+    np.random.seed(1) # make predictable needs to be different from collect
     inds_true = np.random.choice([True, False], size=len(targets_df), p=[frac, 1-frac])
     inds = [inds_true, ~inds_true]
 

@@ -96,10 +96,10 @@ def sample_poses(llims, ulims, num_samples, sample_disk):
 
     # resample components if circular sampling
     if sample_disk:
-        inds_pos = [i for i,v in enumerate(poses_max[:3]) if v>0]     # any x, y, z
+        inds_pos = [i for i,v in enumerate(poses_max[:2]) if v>0]     # only x, y
         inds_rot = [3+i for i,v in enumerate(poses_max[3:5]) if v>0]  # only Rx, Ry
 
-        if len(inds_pos) >= 2:
+        if len(inds_pos) == 2:
             r_max = max(poses_max[inds_pos])  
             samples_pos = random_disk(num_samples, r_max)
 

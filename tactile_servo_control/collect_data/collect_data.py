@@ -7,7 +7,7 @@ np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 def collect_data(
     robot, 
     sensor,
-    target_df,
+    targets_df,
     image_dir,
     task_params,
 ):
@@ -26,7 +26,7 @@ def collect_data(
     joint_angles = robot.joint_angles
 
     # ==== data collection loop ====
-    for i, row in target_df.iterrows():
+    for i, row in targets_df.iterrows():
         image_name = row.loc["sensor_image"]
         pose = row.loc[task_params['pose_label_names']].values.astype(float)
         shear = row.loc[task_params['shear_label_names']].values.astype(float)

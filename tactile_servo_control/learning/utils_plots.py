@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -37,9 +38,8 @@ class ErrorPlotter:
         self,
         pred_df,
         targ_df,
-        err_df,
+        err_df=None,
     ):
-
         for ax in self._axs.flat:
             ax.clear()
 
@@ -54,27 +54,39 @@ class ErrorPlotter:
                 pred_df = pred_df.sort_values(by='temp')
                 pred_df = pred_df.drop('temp', axis=1)
 
-                err_df = err_df.assign(temp=targ_df[label_name])
-                err_df = err_df.sort_values(by='temp')
-                err_df = err_df.drop('temp', axis=1)
+                if isinstance(err_df, pd.DataFrame):
+                    err_df = err_df.assign(temp=targ_df[label_name])
+                    err_df = err_df.sort_values(by='temp')
+                    err_df = err_df.drop('temp', axis=1)
 
-                ax.scatter(
-                    targ_df[label_name], pred_df[label_name], s=1,
-                    c=err_df[label_name], cmap="inferno"
-                )
-                ax.plot(
-                    targ_df[label_name].rolling(n_smooth).mean(),
-                    pred_df[label_name].rolling(n_smooth).mean(),
-                    linewidth=2, c='r'
-                )
+                    ax.scatter(
+                        targ_df[label_name].astype(float), 
+                        pred_df[label_name].astype(float), 
+                        s=1, c=err_df[label_name], cmap="inferno"
+                    )
+                    ax.plot(
+                        targ_df[label_name].astype(float).rolling(n_smooth).mean(),
+                        pred_df[label_name].astype(float).rolling(n_smooth).mean(),
+                        linewidth=2, c='r'
+                    )                    
+                
+                else:
+                    ax.scatter(
+                        targ_df[label_name].astype(float), 
+                        pred_df[label_name].astype(float), s=1, c='k'
+                    )
+
                 ax.set(xlabel=f"target {label_name}", ylabel=f"predicted {label_name}")
-
-                xlim = np.round((targ_df[label_name].min(), targ_df[label_name].max())) 
+                xlim = (
+                    np.round(targ_df[label_name].astype(float).min()),
+                    np.round(targ_df[label_name].astype(float).max())
+                )
                 xticks = ax.get_xticks() 
                 ax.set_xticks(xticks), ax.set_yticks(xticks)
                 ax.set_xlim(*xlim), ax.set_ylim(*xlim)
 
-                ax.text(0.05, 0.9, 'MAE = {:.4f}'.format(err_df[label_name].mean()), transform=ax.transAxes)
+                if isinstance(err_df, pd.DataFrame):
+                    ax.text(0.05, 0.9, 'MAE = {:.4f}'.format(err_df[label_name].mean()), transform=ax.transAxes)
                 ax.grid(True)
 
             else:
@@ -92,7 +104,7 @@ class ErrorPlotter:
         self,
         pred_df,
         targ_df,
-        err_df,
+        err_df=None,
     ):
         if not self.plot_during_training:
             self._fig, self._axs = plt.subplots(self.n_rows, self.n_cols, 
