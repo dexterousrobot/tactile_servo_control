@@ -13,7 +13,7 @@ from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 
 from utils_learning import LabelEncoder, LabelledModel
-from utils_plots import ErrorPlotter
+from utils_plots import RegressErrorPlotter
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -82,13 +82,13 @@ if __name__ == "__main__":
     robot_str, sensor_str, tasks, models, _, device = setup_parse_args(
         robot='cr', 
         sensor='tactip_331',
-        tasks=['edge_3d'],
+        tasks=['edge_5d'],
         models=['simple_cnn'],
         device='cuda'
     )
 
-    model_version = '_sorted'
-    num_poses = 50
+    model_version = ''
+    num_poses = 100
 
     # test the trained networks
     for model_str, task in zip(models, tasks):
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         # create the label encoder/decoder
         label_encoder = LabelEncoder(task_params, device)
         task_params['target_label_names'] = task_params['pose_label_names']
-        error_plotter = ErrorPlotter(task_params, model_dir, name='test_plot.png')
+        error_plotter = RegressErrorPlotter(task_params, model_dir, name='test_plot.png')
 
         # load data parameters
         env_params = load_json_obj(os.path.join(data_dir, 'env_params'))

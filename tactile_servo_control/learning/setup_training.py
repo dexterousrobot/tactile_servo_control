@@ -3,7 +3,6 @@ import shutil
 import numpy as np
 
 from tactile_data.utils_data import load_json_obj, save_json_obj
-
 from tactile_servo_control.collect_data.setup_collect_data import POSE_LABEL_NAMES
 
 

@@ -14,7 +14,7 @@ def collect_data(
 
     # start 50mm above workframe origin with zero joint 6
     robot.move_linear((0, 0, -50, 0, 0, 0))
-    robot.move_joints([*robot.joint_angles[:-1], 0])
+    robot.move_joints([*robot.joint_angles[:-1], -180])
 
     # collect reference image
     image_outfile = os.path.join(image_dir, 'image_0.png')
