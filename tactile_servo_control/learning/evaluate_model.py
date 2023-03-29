@@ -1,5 +1,5 @@
 """
-python evaluate_model.py -r cr -m simple_cnn -t edge_5d
+python evaluate_model.py -r cr -m simple_cnn -t edge_3d
 """
 import os
 import pandas as pd
@@ -14,7 +14,7 @@ from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 
 from setup_training import csv_row_to_label
 from utils_learning import LabelEncoder
-from utils_plots import ErrorPlotter
+from utils_plots import RegressErrorPlotter
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -45,7 +45,7 @@ def evaluate_model(
     for _, batch in enumerate(loader):
 
         # get inputs
-        inputs, labels_dict = batch['images'], batch['labels']
+        inputs, targ_dict = batch['images'], batch['labels']
 
         # wrap them in a Variable object
         inputs = Variable(inputs).float().to(device)
@@ -54,16 +54,16 @@ def evaluate_model(
         outputs = model(inputs)
 
         # count correct for accuracy metric
-        predictions_dict = label_encoder.decode_label(outputs)
+        pred_dict = label_encoder.decode_label(outputs)
 
         # append predictions and labels to dataframes
-        batch_pred_df = pd.DataFrame.from_dict(predictions_dict)
-        batch_targ_df = pd.DataFrame.from_dict(labels_dict)
+        batch_pred_df = pd.DataFrame.from_dict(pred_dict)
+        batch_targ_df = pd.DataFrame.from_dict(targ_dict)
         pred_df = pd.concat([pred_df, batch_pred_df])
         targ_df = pd.concat([targ_df, batch_targ_df])
 
         # get errors and accuracy
-        batch_err_df, batch_acc_df = label_encoder.calc_batch_metrics(labels_dict, predictions_dict)
+        batch_err_df, batch_acc_df = label_encoder.calc_batch_metrics(pred_dict, targ_dict)
 
         # append error to dataframe
         err_df = pd.concat([err_df, batch_err_df])
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     robot, sensor, tasks, models, _, device = setup_parse_args(
         robot='cr', 
         sensor='tactip_331',
-        tasks=['edge_5d'],
+        tasks=['surface_3d'],
         models=['simple_cnn'],
         device='cuda'
     )
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         label_encoder = LabelEncoder(task_params, device=device)
         
         # create plotter of prediction errors
-        error_plotter = ErrorPlotter(task_params, save_dir, name='error_plot_best.png')
+        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot_best.png')
         
         # create the model
         model = create_model(
@@ -133,8 +133,8 @@ if __name__ == "__main__":
         model.eval()
 
         val_generator = ImageDataGenerator(
-            data_dirs=val_data_dirs,
-            csv_row_to_label=csv_row_to_label,
+            val_data_dirs,
+            csv_row_to_label,
             **preproc_params['image_processing']
         )
 

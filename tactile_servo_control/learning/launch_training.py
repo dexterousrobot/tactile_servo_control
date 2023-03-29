@@ -1,5 +1,5 @@
 """
-python launch_training.py -r cr -s tactip_331 -m simple_cnn -t edge_5d
+python launch_training.py -r cr -s tactip_331 -m simple_cnn -t surface_3d
 """
 import os
 
@@ -14,7 +14,7 @@ from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 from evaluate_model import evaluate_model
 from setup_training import setup_training, csv_row_to_label
 from utils_learning import LabelEncoder
-from utils_plots import ErrorPlotter
+from utils_plots import RegressErrorPlotter
 
 
 def launch(
@@ -54,7 +54,7 @@ def launch(
         label_encoder = LabelEncoder(task_params, device)
 
         # create plotter of prediction errors
-        error_plotter = ErrorPlotter(task_params, save_dir, name='error_plot.png', plot_during_training=True)
+        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot.png', plot_during_training=False)
 
         # create the model
         seed_everything(learning_params['seed'])
