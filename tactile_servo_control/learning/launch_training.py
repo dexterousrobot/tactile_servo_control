@@ -54,7 +54,7 @@ def launch(
         label_encoder = LabelEncoder(task_params, device)
 
         # create plotter of prediction errors
-        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot.png', plot_while_train=False)
+        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot.png', plot_during_training=False)
 
         # create the model
         seed_everything(learning_params['seed'])

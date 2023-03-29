@@ -13,12 +13,12 @@ class RegressErrorPlotter:
         task_params,
         save_dir=None,
         name="error_plot.png",
-        plot_while_train=False,
+        plot_during_training=False,
     ):
         self.target_label_names = task_params['target_label_names'].copy()
         self.save_dir = save_dir
         self.name = name
-        self.plot_while_train = plot_while_train
+        self.plot_during_training = plot_during_training
 
         self.n_plots = len(self.target_label_names)
         self.n_rows = int(np.ceil(self.n_plots/3))
@@ -27,7 +27,7 @@ class RegressErrorPlotter:
         if self.n_plots==2 or self.n_plots==5: 
             self.target_label_names.insert(2, None)
 
-        if plot_while_train:
+        if plot_during_training:
             plt.ion()
             self._fig, self._axs = plt.subplots(self.n_rows, self.n_cols, 
                                                 figsize=(4*self.n_cols, 3.5*self.n_rows))
@@ -106,7 +106,7 @@ class RegressErrorPlotter:
         targ_df,
         err_df=None,
     ):
-        if not self.plot_while_train:
+        if not self.plot_during_training:
             self._fig, self._axs = plt.subplots(self.n_rows, self.n_cols, 
                                                 figsize=(4*self.n_cols, 3.5*self.n_rows))        
             self._fig.subplots_adjust(wspace=0.3)
