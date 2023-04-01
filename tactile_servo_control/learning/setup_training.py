@@ -16,7 +16,7 @@ def setup_learning(save_dir=None):
     learning_params = {
         'seed': 42,
         'batch_size': 16,
-        'epochs': 200,
+        'epochs': 30,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -122,20 +122,27 @@ def setup_task(task_name, data_dirs, save_dir=None):
         'edge_5d':    ['x', 'z', 'Rx', 'Ry', 'Rz'],
     }
 
+    target_weights_dict = {
+        'surface_3d': [1, 1, 1],
+        'edge_2d':    [1, 1],
+        'edge_3d':    [1, 1, 1],
+        'edge_5d':    [1, 1, 1, 1, 1],
+    }
+
     # get data limits from training data
-    pose_llims, pose_ulims = [], []
+    llims, ulims = [], []
     for data_dir in data_dirs:
         data_task_params = load_json_obj(os.path.join(data_dir, 'task_params'))
-        pose_llims.append(data_task_params['pose_llims'])
-        pose_ulims.append(data_task_params['pose_ulims'])
+        llims.append(data_task_params['pose_llims'])
+        ulims.append(data_task_params['pose_ulims'])
 
     task_params = {
         'target_label_names': target_label_names_dict[task_name],
-        'pose_llims': tuple(np.min(pose_llims, axis=0).astype(float)),
-        'pose_ulims': tuple(np.max(pose_ulims, axis=0).astype(float)),
-        'pose_label_names': POSE_LABEL_NAMES,
-        'pos_label_names': POSE_LABEL_NAMES[:3],
-        'rot_label_names': POSE_LABEL_NAMES[3:],
+        'target_weights': target_weights_dict[task_name],
+        'label_names': POSE_LABEL_NAMES,
+        'llims': tuple(np.min(llims, axis=0).astype(float)),
+        'ulims': tuple(np.max(ulims, axis=0).astype(float)),
+        'periodic_label_names': ['Rz']
     }
 
     # save parameters
@@ -152,6 +159,7 @@ def setup_training(model_type, task, data_dirs, save_dir=None):
 
     # retain data parameters
     if save_dir:
+        shutil.copy(os.path.join(data_dirs[0], 'collect_params.json'), save_dir)
         shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
         shutil.copy(os.path.join(data_dirs[0], 'sensor_params.json'), save_dir)
 

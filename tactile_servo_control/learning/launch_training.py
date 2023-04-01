@@ -25,6 +25,7 @@ def launch(
     device='cuda'
 ):  
     model_version = ''
+    task_version = ''  # _pose, _shear
 
     robot_str, sensor_str, tasks, models, _, device = setup_parse_args(robot, sensor, tasks, models, device)
 
@@ -39,13 +40,13 @@ def launch(
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)
+        save_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task + task_version, model_str + model_version)
         make_dir(save_dir)
         
         # setup parameters
         learning_params, model_params, preproc_params, task_params = setup_training(
             model_str, 
-            task, 
+            task + task_version,
             train_data_dirs, 
             save_dir
         )  
@@ -54,7 +55,7 @@ def launch(
         label_encoder = LabelEncoder(task_params, device)
 
         # create plotter of prediction errors
-        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot.png', plot_during_training=False)
+        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot.png', plot_during_training=True)
 
         # create the model
         seed_everything(learning_params['seed'])

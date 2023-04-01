@@ -14,11 +14,13 @@ class RegressErrorPlotter:
         save_dir=None,
         name="error_plot.png",
         plot_during_training=False,
+        plot_interp=True
     ):
-        self.target_label_names = task_params['target_label_names'].copy()
+        self.target_label_names = task_params['target_label_names']
         self.save_dir = save_dir
         self.name = name
         self.plot_during_training = plot_during_training
+        self.plot_interp = plot_interp
 
         self.n_plots = len(self.target_label_names)
         self.n_rows = int(np.ceil(self.n_plots/3))
@@ -63,18 +65,20 @@ class RegressErrorPlotter:
                         targ_df[label_name].astype(float), 
                         pred_df[label_name].astype(float), 
                         s=1, c=err_df[label_name], cmap="inferno"
-                    )
-                    ax.plot(
-                        targ_df[label_name].astype(float).rolling(n_smooth).mean(),
-                        pred_df[label_name].astype(float).rolling(n_smooth).mean(),
-                        linewidth=2, c='r'
-                    )                    
+                    )              
                 
                 else:
                     ax.scatter(
                         targ_df[label_name].astype(float), 
                         pred_df[label_name].astype(float), s=1, c='k'
                     )
+
+                if self.plot_interp:
+                    ax.plot(
+                        targ_df[label_name].astype(float).rolling(n_smooth).mean(),
+                        pred_df[label_name].astype(float).rolling(n_smooth).mean(),
+                        linewidth=2, c='r'
+                    )      
 
                 ax.set(xlabel=f"target {label_name}", ylabel=f"predicted {label_name}")
                 xlim = (
