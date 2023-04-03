@@ -40,13 +40,13 @@ def launch(
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task + task_version, model_str + model_version)
+        save_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)
         make_dir(save_dir)
         
         # setup parameters
         learning_params, model_params, preproc_params, task_params = setup_training(
             model_str, 
-            task + task_version,
+            task,
             train_data_dirs, 
             save_dir
         )  

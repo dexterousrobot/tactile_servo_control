@@ -72,8 +72,7 @@ def update_env_params(env_params, object, model_type, save_dir=None):
 def update_task_params(task_params, object, model_type, save_dir=None):
 
     task_params.update({
-        'num_iterations': 200,
-        'utils_plot'
+        'num_iterations': 100,
         'show_plot': True,
         'show_slider': False,
         # 'servo_delay': 0.0,

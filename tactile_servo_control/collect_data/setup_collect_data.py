@@ -66,7 +66,7 @@ def setup_collect_params(robot, task, save_dir=None):
         collect_params['sort'] = 'Rz'
 
     if save_dir:
-        save_json_obj(collect_params, os.path.join(save_dir, 'task_params'))
+        save_json_obj(collect_params, os.path.join(save_dir, 'collect_params'))
 
     return collect_params
 

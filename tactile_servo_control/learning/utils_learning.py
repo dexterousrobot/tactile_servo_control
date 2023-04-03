@@ -23,7 +23,7 @@ class LabelEncoder:
     def __init__(self, task_params, device='cuda'):
         self.device = device
         self.label_names = task_params['label_names']
-        self.target_label_names = task_params['target_label_names']
+        self.target_label_names = task_params['target_label_names'].copy()
         num_targets = len(self.target_label_names)
 
         # optional arguments
@@ -50,15 +50,18 @@ class LabelEncoder:
         norm_target = (((target - llim) / (ulim - llim)) * 2) - 1
         return norm_target.unsqueeze(dim=1)
 
+
     def decode_norm(self, prediction, label_name):
         llim = self.llims_np[self.label_names.index(label_name)]
         ulim = self.ulims_np[self.label_names.index(label_name)]
         return (((prediction + 1) / 2) * (ulim - llim)) + llim 
 
+
     def encode_circnorm(self, target):
         ang = target * np.pi/180
         return [torch.sin(ang).float().to(self.device).unsqueeze(dim=1),
                 torch.cos(ang).float().to(self.device).unsqueeze(dim=1)]
+
 
     def decode_circnorm(self, vec_prediction):
         pred_rot = torch.atan2(*vec_prediction)
@@ -108,8 +111,9 @@ class LabelEncoder:
                 ind += 1
 
             if label_name in self.periodic_label_names:
-                vec_prediction = [outputs[:, ind].detach().cpu(), outputs[:, ind+1].detach().cpu()]
-                decoded_pose[label_name] = self.decode_circnorm(vec_prediction / weight)
+                vec_prediction = [outputs[:, ind].detach().cpu() / weight, 
+                                  outputs[:, ind+1].detach().cpu() / weight ]
+                decoded_pose[label_name] = self.decode_circnorm(vec_prediction) 
                 ind += 2
 
         return decoded_pose

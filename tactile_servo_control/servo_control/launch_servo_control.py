@@ -20,9 +20,9 @@ def launch():
     robot_str, sensor_str, tasks, models, objects, device = setup_parse_args(
         robot='cr', 
         sensor='tactip_331', 
-        tasks=['edge_5d'],
+        tasks=['edge_2d'],
         models=['simple_cnn'],
-        objects=['saddle'],
+        objects=['circle'],
         device='cuda'
     )
 
@@ -33,9 +33,9 @@ def launch():
         
         # setup save dir
         save_dir = os.path.join(BASE_RUNS_PATH, robot_str+'_'+sensor_str, task, object_str + run_version)
-        image_dir = os.path.join(save_dir, "images")
-        make_dir(save_dir, check=False)
-        make_dir(image_dir, check=False)
+        image_dir = os.path.join(save_dir, "processed_images")
+        make_dir(save_dir)
+        make_dir(image_dir)
 
         # load model, task and preproc parameters
         model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)

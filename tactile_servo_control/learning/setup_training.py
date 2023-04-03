@@ -7,8 +7,8 @@ from tactile_servo_control.collect_data.setup_collect_data import POSE_LABEL_NAM
 
 
 def csv_row_to_label(row):
-    pose_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES} 
-    return pose_dict
+    row_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES} 
+    return row_dict
 
 
 def setup_learning(save_dir=None):
@@ -16,7 +16,7 @@ def setup_learning(save_dir=None):
     learning_params = {
         'seed': 42,
         'batch_size': 16,
-        'epochs': 30,
+        'epochs': 100,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -132,9 +132,9 @@ def setup_task(task_name, data_dirs, save_dir=None):
     # get data limits from training data
     llims, ulims = [], []
     for data_dir in data_dirs:
-        data_task_params = load_json_obj(os.path.join(data_dir, 'task_params'))
-        llims.append(data_task_params['pose_llims'])
-        ulims.append(data_task_params['pose_ulims'])
+        collect_params = load_json_obj(os.path.join(data_dir, 'collect_params'))
+        llims.append(collect_params['pose_llims'])
+        ulims.append(collect_params['pose_ulims'])
 
     task_params = {
         'target_label_names': target_label_names_dict[task_name],

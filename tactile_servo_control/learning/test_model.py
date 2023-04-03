@@ -64,8 +64,9 @@ def test_model(
         # move above the target pose
         robot.move_linear(pose - clearance)
 
-        # move to reset position
-        robot.move_joints(joint_angles)
+        # if sorted, don't move to reset position
+        if not collect_params['sort']:
+            robot.move_joints(joint_angles)
 
     # save results
     preds_df.to_csv(os.path.join(model_dir, 'predictions.csv'), index=False)

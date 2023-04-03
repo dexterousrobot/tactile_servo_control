@@ -91,9 +91,9 @@ def main(
 
     process_params = {
         'thresh': True,
-        'dims': (128,128),
+        'dims': (128, 128),
         "circle_mask_radius": 220,
-        "bbox": (10, 10, 430, 430) # "bbox": (10, 10, 310, 310)
+        "bbox": (10, 10, 430, 430) # sim (12, 12, 240, 240) # midi (10, 10, 430, 430) # mini (10, 10, 310, 310)
     }
 
     for task in tasks:
