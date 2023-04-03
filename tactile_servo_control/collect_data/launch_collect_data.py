@@ -1,5 +1,5 @@
 """
-python launch_collect_data.py -r cr -s tactip_331 -t edge_5d
+python launch_collect_data.py -r sim -s tactip -t surface_3d
 """
 import os
 
@@ -18,14 +18,14 @@ def launch(
     sensor='tactip',
     tasks=['edge_5d']
 ):
-    collect_params = {
+    data_params = {
         'data': 5000,
     }
 
     robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(robot, sensor, tasks)
 
     for task in tasks:
-        for dir_name, num_samples in collect_params.items():
+        for dir_name, num_samples in data_params.items():
 
             # setup save dir
             save_dir = os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, dir_name)
@@ -34,7 +34,7 @@ def launch(
             make_dir(image_dir)
 
             # setup parameters
-            sensor_params, task_params, env_params = setup_collect_data(
+            collect_params, env_params, sensor_params = setup_collect_data(
                 robot_str, 
                 sensor_str,
                 task, 
@@ -49,7 +49,7 @@ def launch(
 
             # setup targets to collect
             target_df = setup_target_df(
-                task_params,
+                collect_params,
                 num_samples, 
                 save_dir
             )
@@ -60,7 +60,7 @@ def launch(
                 sensor, 
                 target_df, 
                 image_dir,
-                task_params
+                collect_params
             )
 
 

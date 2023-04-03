@@ -2,6 +2,7 @@
 python launch_servo_control.py -r sim -s tactip -t edge_2d -o circle
 """
 import os
+import numpy as np
 
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils_data import load_json_obj
@@ -30,17 +31,18 @@ def launch():
         
         # setup save dir
         run_dir = os.path.join(BASE_RUNS_PATH, robot+'_'+sensor, task, object + run_version)
-        image_dir = os.path.join(run_dir, "images")
+        image_dir = os.path.join(run_dir, "processed_images")
         control_params = load_json_obj(os.path.join(run_dir, 'control_params'))
         env_params = load_json_obj(os.path.join(run_dir, 'env_params'))
         task_params = load_json_obj(os.path.join(run_dir, 'task_params'))
 
         # load model, task and preproc parameters
-        model_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, env_params['model_type'])
+        model_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, env_params['model_type']) + model_version
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
         sensor_params = {'type': 'replay'}
-        
+        env_params['work_frame'] += np.array([0, 0, 2, 0, 0, 0])
+
         # setup the robot and sensor 
         robot, sensor = setup_embodiment(
             env_params,

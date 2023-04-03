@@ -5,8 +5,8 @@ import os
 import numpy as np
 import pandas as pd
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
-from tactile_data.utils_data import load_json_obj
+from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
+from tactile_data.utils_data import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
 from tactile_servo_control.collect_data.utils_collect_data import setup_target_df
 from tactile_servo_control.utils.setup_parse_args import setup_parse_args
@@ -22,7 +22,7 @@ def test_model(
     robot,
     sensor,
     pose_model,
-    task_params,
+    collect_params,
     targets_df,
     preds_df,
     model_dir,
@@ -39,8 +39,9 @@ def test_model(
 
     # ==== data testing loop ====
     for i, row in targets_df.iterrows():
-        pose = row.loc[task_params['pose_label_names']].values.astype(float)
-        shear = row.loc[task_params['shear_label_names']].values.astype(float)
+        image_name = row.loc["sensor_image"]
+        pose = row.loc[collect_params['pose_label_names']].values.astype(float)
+        shear = row.loc[collect_params['shear_label_names']].values.astype(float)
 
         # report
         with np.printoptions(precision=2, suppress=True):
@@ -56,14 +57,15 @@ def test_model(
         robot.move_linear(pose)
 
         # collect and process tactile image
-        tactile_image = sensor.process()
+        image_outfile = os.path.join(image_dir, image_name)
+        tactile_image = sensor.process(image_outfile)
         preds_df.loc[i] = pose_model.predict(tactile_image)
 
         # move above the target pose
         robot.move_linear(pose - clearance)
 
         # if sorted, don't move to reset position
-        if not task_params['sort']:
+        if not collect_params['sort']:
             robot.move_joints(joint_angles)
 
     # save results
@@ -91,28 +93,32 @@ if __name__ == "__main__":
     num_poses = 100
 
     # test the trained networks
-    for model_str, task in zip(models, tasks):
+    for task, model_str in zip(tasks, models):
+
+        #  setup save dir
+        save_dir = os.path.join(BASE_RUNS_PATH, robot_str+'_'+sensor_str, task, model_str+model_version)
+        image_dir = os.path.join(save_dir, "processed_images")
+        make_dir(save_dir)
+        make_dir(image_dir)
 
         # set data and model dir
-        data_dir = os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task, 'train')
-        model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)
+        model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str+model_version)
 
-        # load model params
+        # load params
+        collect_params = load_json_obj(os.path.join(model_dir, 'collect_params'))
+        env_params = load_json_obj(os.path.join(model_dir, 'env_params'))
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
         sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))
         task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
 
+        # create target_df
+        targets_df = setup_target_df(collect_params, num_poses, save_dir) 
+        preds_df = pd.DataFrame(columns=task_params['label_names'])
+
         # create the label encoder/decoder
         label_encoder = LabelEncoder(task_params, device)
-        task_params['target_label_names'] = task_params['pose_label_names']
-        error_plotter = RegressErrorPlotter(task_params, model_dir, name='test_plot.png')
-
-        # load data parameters
-        env_params = load_json_obj(os.path.join(data_dir, 'env_params'))
-        task_params = load_json_obj(os.path.join(data_dir, 'task_params'))
-        targets_df = setup_target_df(task_params, num_poses) 
-        preds_df = pd.DataFrame(columns=task_params['pose_label_names'])
+        error_plotter = RegressErrorPlotter(task_params, save_dir, name='test_plot.png', plot_interp=False)
 
         # setup embodiment, network and model
         robot, sensor = setup_embodiment(
@@ -142,7 +148,7 @@ if __name__ == "__main__":
             robot,
             sensor,
             pose_model,
-            task_params,
+            collect_params,
             targets_df,
             preds_df,
             model_dir,

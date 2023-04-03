@@ -6,7 +6,7 @@ import pandas as pd
 from torch.autograd import Variable
 import torch
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
+from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils_data import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
@@ -103,23 +103,26 @@ if __name__ == "__main__":
     for model_type, task in zip(models, tasks):
 
         val_data_dirs = [
-            os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val')
+            # os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val')
+            # os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val')
+            os.path.join(BASE_RUNS_PATH, robot+'_'+sensor, task, model_type)
         ]
 
-        # set save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, model_type + model_version)
+        # set model dir
+        model_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, model_type + model_version)
 
         # setup parameters
-        learning_params = load_json_obj(os.path.join(save_dir, 'learning_params'))
-        model_params = load_json_obj(os.path.join(save_dir, 'model_params'))
-        task_params = load_json_obj(os.path.join(save_dir, 'task_params'))
-        preproc_params = load_json_obj(os.path.join(save_dir, 'preproc_params'))
+        learning_params = load_json_obj(os.path.join(model_dir, 'learning_params'))
+        model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
+        task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
+        preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
 
         # create the label encoder/decoder
         label_encoder = LabelEncoder(task_params, device=device)
         
         # create plotter of prediction errors
-        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot_best.png')
+        # error_plotter = RegressErrorPlotter(task_params, model_dir, name='error_plot_best.png')
+        error_plotter = RegressErrorPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
         
         # create the model
         model = create_model(
@@ -127,7 +130,7 @@ if __name__ == "__main__":
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
-            saved_model_dir=save_dir,
+            saved_model_dir=model_dir,
             device=device
         )
         model.eval()

@@ -4,14 +4,14 @@ import pandas as pd
 
 
 def setup_target_df(
-    task_params,
+    collect_params,
     num_poses=100, 
     save_dir=None,
 ):
 
-    pose_lims = [task_params['pose_llims'], task_params['pose_ulims']]
-    shear_lims = [task_params['shear_llims'], task_params['shear_ulims']]
-    sample_disk = task_params.get('sample_disk', False)
+    pose_lims = [collect_params['pose_llims'], collect_params['pose_ulims']]
+    shear_lims = [collect_params['shear_llims'], collect_params['shear_ulims']]
+    sample_disk = collect_params.get('sample_disk', False)
 
     # generate random poses 
     np.random.seed(0) # make predictable
@@ -19,16 +19,16 @@ def setup_target_df(
     shears = sample_poses(*shear_lims, num_poses, sample_disk)
 
     # sort parameters by label
-    if task_params.get('sort', False):
-        ind = task_params['pose_label_names'].index(task_params['sort'])
+    if collect_params.get('sort', False):
+        ind = collect_params['pose_label_names'].index(collect_params['sort'])
         poses = poses[poses[:, ind].argsort()]
 
     # generate and save target data
     target_df = pd.DataFrame(
         columns=[
             "sensor_image",
-            *task_params['pose_label_names'],
-            *task_params['shear_label_names']
+            *collect_params['pose_label_names'],
+            *collect_params['shear_label_names']
         ]
     )
 

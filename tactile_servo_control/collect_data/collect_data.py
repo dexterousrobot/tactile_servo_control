@@ -9,12 +9,12 @@ def collect_data(
     sensor,
     targets_df,
     image_dir,
-    task_params,
+    collect_params,
 ):
 
     # start 50mm above workframe origin with zero joint 6
     robot.move_linear((0, 0, -50, 0, 0, 0))
-    robot.move_joints([*robot.joint_angles[:-1], -180])
+    robot.move_joints([*robot.joint_angles[:-1], 0])
 
     # collect reference image
     image_outfile = os.path.join(image_dir, 'image_0.png')
@@ -28,8 +28,8 @@ def collect_data(
     # ==== data collection loop ====
     for i, row in targets_df.iterrows():
         image_name = row.loc["sensor_image"]
-        pose = row.loc[task_params['pose_label_names']].values.astype(float)
-        shear = row.loc[task_params['shear_label_names']].values.astype(float)
+        pose = row.loc[collect_params['pose_label_names']].values.astype(float)
+        shear = row.loc[collect_params['shear_label_names']].values.astype(float)
         # if i<228: continue
 
         # report
@@ -53,7 +53,7 @@ def collect_data(
         robot.move_linear(pose - clearance)
 
         # if sorted, don't move to reset position
-        if not task_params['sort']:
+        if not collect_params['sort']:
             robot.move_joints(joint_angles)
 
     # finish 50mm above workframe origin then zero last joint 
