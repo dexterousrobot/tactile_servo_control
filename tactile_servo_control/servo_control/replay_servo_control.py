@@ -18,30 +18,28 @@ from servo_control import servo_control
 def launch():
 
     robot, sensor, tasks, _, objects, device = setup_parse_args(
-        robot='cr', 
-        sensor='tactip_331', 
-        tasks=['edge_5d'],
-        objects=['saddle'],
+        robot='sim', 
+        sensor='tactip', 
+        tasks=['edge_2d'],
+        objects=['circle'],
         device='cuda'
     )
-
-    run_version = ''
 
     for task, object in zip(tasks, objects):
         
         # setup save dir
-        run_dir = os.path.join(BASE_RUNS_PATH, robot+'_'+sensor, task, object + run_version)
+        run_dir = os.path.join(BASE_RUNS_PATH, robot+'_'+sensor, task, object)
         image_dir = os.path.join(run_dir, "processed_images")
         control_params = load_json_obj(os.path.join(run_dir, 'control_params'))
         env_params = load_json_obj(os.path.join(run_dir, 'env_params'))
         task_params = load_json_obj(os.path.join(run_dir, 'task_params'))
 
         # load model, task and preproc parameters
-        model_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, env_params['model_type']) + model_version
+        model_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, task_params['model'])
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
         sensor_params = {'type': 'replay'}
-        env_params['work_frame'] += np.array([0, 0, 2, 0, 0, 0])
+        # env_params['work_frame'] += np.array([0, 0, 2, 0, 0, 0])
 
         # setup the robot and sensor 
         robot, sensor = setup_embodiment(

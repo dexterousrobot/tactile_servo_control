@@ -18,15 +18,14 @@ from setup_servo_control import setup_servo_control
 def launch():
 
     robot_str, sensor_str, tasks, models, objects, device = setup_parse_args(
-        robot='cr', 
-        sensor='tactip_331', 
+        robot='sim', 
+        sensor='tactip', 
         tasks=['edge_2d'],
         models=['simple_cnn'],
         objects=['circle'],
         device='cuda'
     )
 
-    model_version = ''
     run_version = ''
 
     for task, model_str, object_str in zip(tasks, models, objects):
@@ -38,7 +37,7 @@ def launch():
         make_dir(image_dir)
 
         # load model, task and preproc parameters
-        model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)
+        model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str)
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
         sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))

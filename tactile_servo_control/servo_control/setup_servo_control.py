@@ -48,7 +48,7 @@ def setup_control_params(task, save_dir=None):
     return control_params
 
 
-def update_env_params(env_params, object, model_type, save_dir=None):
+def update_env_params(env_params, object, save_dir=None):
 
     wf_offset_dict = {
         'saddle':  (-10, 0, 18.5, 0, 0, 0),
@@ -59,7 +59,6 @@ def update_env_params(env_params, object, model_type, save_dir=None):
     env_params.update({
         'stim_name': object,
         'work_frame': tuple(env_params['work_frame'] - wf_offset),
-        'model_type': model_type,
         'speed': 20,
     })
 
@@ -69,12 +68,13 @@ def update_env_params(env_params, object, model_type, save_dir=None):
     return env_params
 
 
-def update_task_params(task_params, object, model_type, save_dir=None):
+def update_task_params(task_params, object, model, save_dir=None):
 
     task_params.update({
         'num_iterations': 100,
         'show_plot': True,
         'show_slider': False,
+        'model': model
         # 'servo_delay': 0.0,
     })
 
@@ -84,12 +84,12 @@ def update_task_params(task_params, object, model_type, save_dir=None):
     return task_params
 
 
-def setup_servo_control(task, object, model_type, model_dir, save_dir=None):
+def setup_servo_control(task, object, model, model_dir, save_dir=None):
     env_params = load_json_obj(os.path.join(model_dir, 'env_params'))
     task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
     control_params = setup_control_params(task, save_dir)
-    env_params = update_env_params(env_params, object, model_type, save_dir)
-    task_params = update_task_params(task_params, object, model_type, save_dir)
+    env_params = update_env_params(env_params, object, save_dir)
+    task_params = update_task_params(task_params, object, model, save_dir)
 
     return control_params, env_params, task_params
 
