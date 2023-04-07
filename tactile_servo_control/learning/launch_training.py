@@ -18,15 +18,13 @@ from utils_plots import RegressErrorPlotter
 
 
 def launch(
-    robot='cr', 
+    robot='cr',
     sensor='tactip_331',
     tasks=['edge_5d'],
     models=['simple_cnn'],
     device='cuda'
-):  
+):
     model_version = ''
-    task_version = ''  # _pose, _shear
-
     robot_str, sensor_str, tasks, models, _, device = setup_parse_args(robot, sensor, tasks, models, device)
 
     for task, model_str in zip(tasks, models):
@@ -42,20 +40,20 @@ def launch(
         # setup save dir
         save_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str + model_version)
         make_dir(save_dir)
-        
+
         # setup parameters
         learning_params, model_params, preproc_params, task_params = setup_training(
-            model_str, 
+            model_str,
             task,
-            train_data_dirs, 
+            train_data_dirs,
             save_dir
-        )  
+        )
 
         # create the label encoder/decoder
         label_encoder = LabelEncoder(task_params, device)
 
         # create plotter of prediction errors
-        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot.png', plot_during_training=True)
+        error_plotter = RegressErrorPlotter(task_params, save_dir, name='error_plot.png', plot_during_training=False)
 
         # create the model
         seed_everything(learning_params['seed'])
@@ -105,14 +103,4 @@ def launch(
 
 
 if __name__ == "__main__":
-
-    # for profiling and debugging slow functions
-    # import cProfile
-    # import pstats
-    # pstats.Stats(
-    #     cProfile.Profile().run("launch()")
-    # ).sort_stats(
-    #     pstats.SortKey.TIME
-    # ).print_stats(20)
-
     launch()

@@ -21,7 +21,7 @@ def setup_sensor_params(robot, sensor, save_dir=None):
     }
     sensor_type = 'midi'
 
-    if robot != 'sim': 
+    if robot != 'sim':
         sensor_params = {
             'type': sensor_type,
             'source': 0,
@@ -39,16 +39,16 @@ def setup_sensor_params(robot, sensor, save_dir=None):
 def setup_collect_params(robot, task, save_dir=None):
 
     pose_lims_dict = {
-        'surface_3d': [ ( 0, 0, 1, -25, -25,    0), (0, 0, 5, 25, 25, 0) ],
-        'edge_2d':    [ (-5, 0, 3,   0,   0, -180), (5, 0, 4, 0, 0, 180) ],
-        'edge_3d':    [ (-5, 0, 1,   0,   0, -180), (5, 0, 5, 0, 0, 180) ],
-        'edge_5d':    [ (-5, 0, 1, -25, -25, -180), (5, 0, 5, 25, 25, 180) ],
+        'surface_3d': [(0, 0, 1, -25, -25,    0), (0, 0, 5, 25, 25, 0)],
+        'edge_2d':    [(-5, 0, 3,   0,   0, -180), (5, 0, 4, 0, 0, 180)],
+        'edge_3d':    [(-5, 0, 1,   0,   0, -180), (5, 0, 5, 0, 0, 180)],
+        'edge_5d':    [(-5, 0, 1, -25, -25, -180), (5, 0, 5, 25, 25, 180)],
     }
-    
+
     shear_lims_dict = {
-        'cr':      [ (-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5) ],
-        'mg400':   [ (-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5) ],
-        'sim':     [ ( 0, 0, 0, 0, 0, 0),   (0, 0, 0, 0, 0, 0) ],
+        'cr':      [(-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5)],
+        'mg400':   [(-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5)],
+        'sim':     [(0, 0, 0, 0, 0, 0),   (0, 0, 0, 0, 0, 0)],
     }
 
     collect_params = {
@@ -59,8 +59,9 @@ def setup_collect_params(robot, task, save_dir=None):
         'shear_llims': shear_lims_dict[robot][0],
         'shear_ulims': shear_lims_dict[robot][1],
         'sample_disk': True,
-        'sort': False
-    }   
+        'sort': False,
+        'seed': 0,
+    }
 
     if robot == 'sim':
         collect_params['sort'] = 'Rz'
@@ -74,28 +75,29 @@ def setup_collect_params(robot, task, save_dir=None):
 def setup_env_params(robot, task, save_dir=None):
 
     work_frame_dict = {
-        'cr_edge':       [ (20, -475, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0) ],
-        'cr_surface':    [ (20, -425, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0) ],
-        'mg400_edge':    [ (285,  0, 0, -180, 0, 0),     (0, 0, -50, 0, 0, 0) ],
-        'mg400_surface': [ (285,  0, 0, -180, 0, 0),     (0, 0, -50, 0, 0, 0) ],
-        'sim_edge':      [ (650, 0, 50, -180, 0, 0),     (0, 0, -85, 0, 0, 0) ],
-        'sim_surface':   [ (600, 0, 50, -180, 0, 0),     (0, 0, -85, 0, 0, 0) ],
+        'cr_edge':       [(20, -475, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0)],
+        'cr_surface':    [(20, -425, 100, -180, 0, 90), (0, 0, -70, 0, 0, 0)],
+        'mg400_edge':    [(285,  0, 0, -180, 0, 0),     (0, 0, -50, 0, 0, 0)],
+        'mg400_surface': [(285,  0, 0, -180, 0, 0),     (0, 0, -50, 0, 0, 0)],
+        'sim_edge':      [(650, 0, 50, -180, 0, 0),     (0, 0, -85, 0, 0, 0)],
+        'sim_surface':   [(600, 0, 50, -180, 0, 0),     (0, 0, -85, 0, 0, 0)],
     }
 
     env_params = {
         'robot': robot,
         'stim_name': 'square',
-        'speed': 50, 
+        'speed': 50,
         'work_frame': work_frame_dict[robot+'_'+task[:-3]][0],
-        'tcp_pose': work_frame_dict[robot+'_'+task[:-3]][1]
+        'tcp_pose': work_frame_dict[robot+'_'+task[:-3]][1],
+        'show_gui': False
     }
 
     if robot == 'sim':
-        env_params['stim_pose'] = (600, 0, 0, 0, 0, 0)
+        env_params['stim_pose'] = (600, 0, 12.5, 0, 0, 0)
 
     if save_dir:
         save_json_obj(env_params, os.path.join(save_dir, 'env_params'))
-    
+
     return env_params
 
 

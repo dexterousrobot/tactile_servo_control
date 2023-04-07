@@ -37,12 +37,10 @@ class LabelEncoder:
         self.llims_torch = torch.from_numpy(self.llims_np).float().to(self.device)
         self.ulims_torch = torch.from_numpy(self.ulims_np).float().to(self.device)
 
-
     @property
     def out_dim(self):
         periodic_dims = [self.target_label_names.count(p) for p in self.periodic_label_names]
         return len(self.target_label_names) + sum(periodic_dims)
-
 
     def encode_norm(self, target, label_name):
         llim = self.llims_torch[self.label_names.index(label_name)]
@@ -50,24 +48,20 @@ class LabelEncoder:
         norm_target = (((target - llim) / (ulim - llim)) * 2) - 1
         return norm_target.unsqueeze(dim=1)
 
-
     def decode_norm(self, prediction, label_name):
         llim = self.llims_np[self.label_names.index(label_name)]
         ulim = self.ulims_np[self.label_names.index(label_name)]
-        return (((prediction + 1) / 2) * (ulim - llim)) + llim 
-
+        return (((prediction + 1) / 2) * (ulim - llim)) + llim
 
     def encode_circnorm(self, target):
         ang = target * np.pi/180
         return [torch.sin(ang).float().to(self.device).unsqueeze(dim=1),
                 torch.cos(ang).float().to(self.device).unsqueeze(dim=1)]
 
-
     def decode_circnorm(self, vec_prediction):
         pred_rot = torch.atan2(*vec_prediction)
         return pred_rot * 180/np.pi
-    
-    
+
     def encode_label(self, labels_dict):
         """
         Process raw pose data to NN friendly label for prediction.
@@ -92,7 +86,6 @@ class LabelEncoder:
 
         return torch.cat(encoded_pose, 1)
 
-
     def decode_label(self, outputs):
         """
         Process NN predictions to raw pose data, always decodes to cpu.
@@ -105,19 +98,18 @@ class LabelEncoder:
         ind = 0
         for label_name, weight in zip(self.target_label_names, self.target_weights):
 
-            if not label_name in self.periodic_label_names:
+            if label_name not in self.periodic_label_names:
                 prediction = outputs[:, ind].detach().cpu() / weight
                 decoded_pose[label_name] = self.decode_norm(prediction, label_name)
                 ind += 1
 
-            if label_name in self.periodic_label_names:
-                vec_prediction = [outputs[:, ind].detach().cpu() / weight, 
-                                  outputs[:, ind+1].detach().cpu() / weight ]
-                decoded_pose[label_name] = self.decode_circnorm(vec_prediction) 
+            elif label_name in self.periodic_label_names:
+                vec_prediction = [outputs[:, ind].detach().cpu() / weight,
+                                  outputs[:, ind+1].detach().cpu() / weight]
+                decoded_pose[label_name] = self.decode_circnorm(vec_prediction)
                 ind += 2
 
         return decoded_pose
-
 
     def calc_batch_metrics(self, labels, predictions):
         """
@@ -132,20 +124,19 @@ class LabelEncoder:
         acc_df = self.acc_metric(err_df)
         return err_df, acc_df
 
-
     def err_metric(self, labels, predictions):
         """
         Error metric for regression problem, returns dict of errors.
         """
         err_df = pd.DataFrame(columns=self.label_names)
-        for label_name in self.target_label_names :
+        for label_name in self.target_label_names:
 
-            if not label_name in self.periodic_label_names:
+            if label_name not in self.periodic_label_names:
                 abs_err = torch.abs(
                     labels[label_name] - predictions[label_name]
                 ).detach().cpu().numpy()
 
-            if label_name in self.periodic_label_names:
+            elif label_name in self.periodic_label_names:
                 targ_rot = labels[label_name] * np.pi/180
                 pred_rot = predictions[label_name] * np.pi/180
 
@@ -157,7 +148,6 @@ class LabelEncoder:
             err_df[label_name] = abs_err
 
         return err_df
-
 
     def acc_metric(self, err_df):
         """
@@ -183,18 +173,17 @@ class LabelEncoder:
 
 class LabelledModel:
     def __init__(self,
-        model, 
-        image_processing_params, 
-        label_encoder,
-        device='cuda'
-    ):
+                 model,
+                 image_processing_params,
+                 label_encoder,
+                 device='cuda'
+                 ):
         self.model = model
         self.image_processing_params = image_processing_params
-        self.label_encoder = label_encoder 
+        self.label_encoder = label_encoder
         self.label_names = label_encoder.label_names
         self.target_label_names = label_encoder.target_label_names
         self.device = device
-
 
     def predict(self, tactile_image):
 
@@ -219,8 +208,8 @@ class LabelledModel:
         print("\nPredictions: ", end="")
         predictions_arr = np.zeros(len(self.label_names))
         for label_name in self.target_label_names:
-            predicted_val = predictions_dict[label_name].detach().cpu().numpy() 
-            predictions_arr[self.label_names.index(label_name)] = predicted_val            
+            predicted_val = predictions_dict[label_name].detach().cpu().numpy()
+            predictions_arr[self.label_names.index(label_name)] = predicted_val
             with np.printoptions(precision=2, suppress=True):
                 print(label_name, predicted_val, end=" ")
 
@@ -228,9 +217,9 @@ class LabelledModel:
 
 
 if __name__ == '__main__':
- 
+
     robot, sensor, tasks, models, _, device = setup_parse_args(
-        robot='cr', 
+        robot='cr',
         sensor='tactip_331',
         tasks=['edge_5d'],
         models=['posenet_cnn'],

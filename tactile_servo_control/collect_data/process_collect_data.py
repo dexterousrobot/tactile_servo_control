@@ -19,7 +19,7 @@ def split(path, dir_in_str, dirs_out, frac=0.8):
     targets_df = pd.read_csv(os.path.join(path, dir_in_str, 'targets.csv'))
 
     # indices to split data
-    np.random.seed(1) # make predictable needs to be different from collect
+    np.random.seed(1)  # make predictable needs to be different from collect
     inds_true = np.random.choice([True, False], size=len(targets_df), p=[frac, 1-frac])
     inds = [inds_true, ~inds_true]
 
@@ -33,8 +33,8 @@ def split(path, dir_in_str, dirs_out, frac=0.8):
             make_dir(dir_out, check=False)
             shutil.copy(os.path.join(dir_in, 'collect_params.json'), dir_out)
             shutil.copy(os.path.join(dir_in, 'env_params.json'), dir_out)
-            shutil.copy(os.path.join(dir_in, 'sensor_params.json'), dir_out)  
-        
+            shutil.copy(os.path.join(dir_in, 'sensor_params.json'), dir_out)
+
             # create dataframe pointing to original images (to avoid copying)
             targets_df.loc[ind, 'sensor_image'] = \
                 rf'../../{dir_in_str}/images/' + targets_df[ind].sensor_image.map(str)
@@ -50,7 +50,7 @@ def process(path, dirs, process_params={}):
         image_dir = os.path.join(path, dir, 'images')
         proc_image_dir = os.path.join(path, dir, 'processed_images')
         os.makedirs(proc_image_dir, exist_ok=True)
-        
+
         # process images
         targets_df = pd.read_csv(os.path.join(path, dir, 'targets.csv'))
         for sensor_image in targets_df.sensor_image:
@@ -64,7 +64,7 @@ def process(path, dirs, process_params={}):
         # if targets have paths remove them
         if image_path:
             targets_df.loc[:, 'sensor_image'] = \
-                targets_df.sensor_image.str.split('/', expand=True).iloc[:,-1]
+                targets_df.sensor_image.str.split('/', expand=True).iloc[:, -1]
             targets_df.to_csv(os.path.join(path, dir, 'targets.csv'), index=False)
 
         # save merged sensor_params and process_params
@@ -74,12 +74,12 @@ def process(path, dirs, process_params={}):
         if 'bbox' in sensor_params and 'bbox' in sensor_proc_params:
             b, pb = sensor_params['bbox'], sensor_proc_params['bbox']
             sensor_proc_params['bbox'] = [b[0]+pb[0], b[1]+pb[1], b[0]+pb[2], b[1]+pb[3]]
-        
+
         save_json_obj(sensor_proc_params, os.path.join(path, dir, 'sensor_process_params'))
 
 
 def main(
-    robot='cr', 
+    robot='cr',
     sensor='tactip_331',
     tasks=['edge_5d']
 ):
@@ -93,7 +93,7 @@ def main(
         'thresh': True,
         'dims': (128, 128),
         "circle_mask_radius": 220,
-        "bbox": (10, 10, 430, 430) # sim (12, 12, 240, 240) # midi (10, 10, 430, 430) # mini (10, 10, 310, 310)
+        "bbox": (10, 10, 430, 430)  # sim (12, 12, 240, 240) # midi (10, 10, 430, 430) # mini (10, 10, 310, 310)
     }
 
     for task in tasks:

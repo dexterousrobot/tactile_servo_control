@@ -7,7 +7,7 @@ from tactile_servo_control.collect_data.setup_collect_data import POSE_LABEL_NAM
 
 
 def csv_row_to_label(row):
-    row_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES} 
+    row_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES}
     return row_dict
 
 
@@ -165,7 +165,7 @@ def setup_training(model_type, task, data_dirs, save_dir=None):
 
         # if there is sensor process params, overwrite
         sensor_proc_params_file = os.path.join(data_dirs[0], 'sensor_process_params.json')
-        if os.path.isfile(sensor_proc_params_file): 
-            shutil.copyfile(sensor_proc_params_file, os.path.join(save_dir, 'sensor_params.json'))           
+        if os.path.isfile(sensor_proc_params_file):
+            shutil.copyfile(sensor_proc_params_file, os.path.join(save_dir, 'sensor_params.json'))
 
     return learning_params, model_params, preproc_params, task_params

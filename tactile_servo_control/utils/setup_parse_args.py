@@ -15,13 +15,13 @@ def setup_parse_args(
         type=str,
         help="Choose robot from ['sim', 'mg400', 'cr']",
         default=robot
-    )    
+    )
     parser.add_argument(
         '-s', '--sensor',
         type=str,
         help="Choose sensor from ['tactip', 'tactip_127']",
         default=sensor
-    )    
+    )
     parser.add_argument(
         '-t', '--tasks',
         nargs='+',

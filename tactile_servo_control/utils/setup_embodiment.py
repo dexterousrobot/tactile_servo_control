@@ -1,15 +1,16 @@
-import os 
+import os
 import numpy as np
 
-from tactile_sim.utils.pybullet_utils import connect_pybullet, load_standard_environment
-from tactile_sim.utils.pybullet_utils import load_stim, set_debug_camera
+from tactile_sim.utils.setup_pb_utils import connect_pybullet, load_standard_environment
+from tactile_sim.utils.setup_pb_utils import load_stim, set_debug_camera
+from tactile_sim.utils.setup_pb_utils import simple_pb_loop
 from tactile_sim.embodiments import create_embodiment
 from tactile_sim.assets.default_rest_poses import rest_poses_dict
 
 from cri.robot import SyncRobot
 from cri.controller import SimController, Controller
 
-from tactile_servo_control.utils.sensors import SimSensor, RealSensor, ReplaySensor
+from tactile_image_processing.simple_sensors import SimSensor, RealSensor, ReplaySensor
 
 
 def setup_embodiment(
@@ -17,16 +18,16 @@ def setup_embodiment(
     sensor_params={}
 ):
     env_params['stim_path'] = os.path.join(os.path.dirname(__file__), 'stimuli')
- 
+
     # setup simulated robot
     if env_params['robot'] == 'sim':
-        embodiment = setup_pybullet_env(**env_params, **sensor_params)        
+        embodiment = setup_pybullet_env(**env_params, **sensor_params)
         robot = SyncRobot(SimController(embodiment.arm))
         sensor = SimSensor(sensor_params, embodiment)
-    
+
     # setup real robot
     if env_params['robot'] != 'sim':
-        robot = SyncRobot(Controller[env_params['robot']]())   
+        robot = SyncRobot(Controller[env_params['robot']]())
         sensor = RealSensor(sensor_params)
 
     # if replay overwrite sensor
@@ -46,16 +47,16 @@ def setup_pybullet_env(
     embodiment_type='tactile_arm',
     arm_type='ur5',
     sensor_type='standard_tactip',
-    image_size=(128,128),
+    image_size=(128, 128),
     show_tactile=False,
     stim_name='square',
-    stim_path=os.path.dirname(__file__),        
-    stim_pose=(600, 0, 0, 0, 0, 0),
+    stim_path=os.path.dirname(__file__),
+    stim_pose=(600, 0, 12.5, 0, 0, 0),
+    show_gui=True,
     **kwargs
 ):
-    
+
     timestep = 1/240.0
-    show_gui = True
 
     # define sensor parameters
     robot_arm_params = {
@@ -89,7 +90,7 @@ def setup_pybullet_env(
     pb = connect_pybullet(timestep, show_gui)
     load_standard_environment(pb)
     stim_name = os.path.join(stim_path, stim_name, stim_name+'.urdf')
-    load_stim(pb, stim_name, np.array(stim_pose)/1e3)
+    load_stim(pb, stim_name, np.array(stim_pose)/1e3, fixed_base=True)
     embodiment = create_embodiment(
         pb,
         embodiment_type,
@@ -102,4 +103,26 @@ def setup_pybullet_env(
 
 
 if __name__ == '__main__':
-    pass
+
+    env_params = {
+        'robot': 'sim',
+        'stim_name': 'square',
+        'speed': 50,
+        'work_frame': (600, 0, 200, 0, 0, 0),
+        'tcp_pose': (600, 0, 0, 0, 0, 0),
+        'stim_pose': (600, 0, 12.5, 0, 0, 0),
+        'show_gui': False
+    }
+
+    sensor_params = {
+        "type": "standard_tactip",
+        "image_size": (256, 256),
+        "show_tactile": False
+    }
+
+    robot = setup_embodiment(
+        env_params,
+        sensor_params
+    )
+
+    simple_pb_loop()
