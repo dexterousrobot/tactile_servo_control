@@ -25,6 +25,7 @@ def test_model(
     targets_df,
     preds_df,
     save_dir,
+    image_dir,
     error_plotter
 ):
     # start 50mm above workframe origin
@@ -154,5 +155,6 @@ if __name__ == "__main__":
             targets_df,
             preds_df,
             save_dir,
+            image_dir,
             error_plotter
         )
