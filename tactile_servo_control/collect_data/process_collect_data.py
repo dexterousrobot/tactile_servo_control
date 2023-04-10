@@ -10,10 +10,11 @@ import pandas as pd
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_data.utils_data import save_json_obj, load_json_obj, make_dir
 from tactile_image_processing.image_transforms import process_image
-from tactile_servo_control.utils.setup_parse_args import setup_parse_args
+
+from tactile_servo_control.utils.parse_args import parse_args
 
 
-def split(path, dir_in_str, dirs_out, frac=0.8):
+def split_data(path, dir_in_str, dirs_out, frac=0.8):
 
     # load target df
     targets_df = pd.read_csv(os.path.join(path, dir_in_str, 'targets.csv'))
@@ -41,7 +42,7 @@ def split(path, dir_in_str, dirs_out, frac=0.8):
             targets_df[ind].to_csv(os.path.join(dir_out, 'targets.csv'), index=False)
 
 
-def process(path, dirs, process_params={}):
+def process_data(path, dirs, process_params={}):
 
     # iterate over dirs
     for dir in dirs:
@@ -78,28 +79,35 @@ def process(path, dirs, process_params={}):
         save_json_obj(sensor_proc_params, os.path.join(path, dir, 'sensor_process_params'))
 
 
-def main(
-    robot='cr',
-    sensor='tactip_331',
-    tasks=['edge_5d']
-):
-    robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(robot, sensor, tasks)
+def main():
+    
+    args = parse_args(
+        robot='sim', 
+        sensor='tactip',
+        tasks=['edge_2d'],
+        version=['test']
+    )
 
     dir_in = "data"
     dirs_out = ["train", "val"]
     frac = 0.8
 
     process_params = {
-        'thresh': True,
+        # 'thresh': True,
         'dims': (128, 128),
-        "circle_mask_radius": 220,
-        "bbox": (10, 10, 430, 430)  # sim (12, 12, 240, 240) # midi (10, 10, 430, 430) # mini (10, 10, 310, 310)
+        # "circle_mask_radius": 220,
+        "bbox": (12, 12, 240, 240)  # sim (12, 12, 240, 240) # midi (10, 10, 430, 430) # mini (10, 10, 310, 310)
     }
 
-    for task in tasks:
-        path = os.path.join(BASE_DATA_PATH, robot_str+'_'+sensor_str, task)
-        split(path, dir_in, dirs_out, frac)
-        process(path, dirs_out, process_params)
+    for args.task in args.tasks:
+        
+        dir_in = '_'.join([dir_in, *args.version])
+        dirs_out = ['_'.join([d, *args.version]) for d in dirs_out]
+        output_dir = '_'.join([args.robot, args.sensor])
+        path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
+
+        split_data(path, dir_in, dirs_out, frac)
+        process_data(path, dirs_out, process_params)
 
 
 if __name__ == "__main__":

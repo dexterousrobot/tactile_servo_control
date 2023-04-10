@@ -5,22 +5,27 @@ import os
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_learning.supervised.image_generator import demo_image_generation
-from tactile_servo_control.utils.setup_parse_args import setup_parse_args
+from tactile_servo_control.utils.parse_args import parse_args
 
-from setup_training import setup_learning, csv_row_to_label
+from tactile_servo_control.learning.setup_training import setup_learning, csv_row_to_label
 
 
 if __name__ == '__main__':
 
-    robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(
-        robot='sim',
+    args = parse_args(
+        robot='sim', 
         sensor='tactip',
-        tasks=['edge_5d'],
+        tasks=['edge_2d'],
+        version=['test']
     )
 
+    output_dir = '_'.join([args.robot, args.sensor])
+    train_dir_name = '_'.join(["train", *args.version])
+    val_dir_name = '_'.join(["val", *args.version])
+
     data_dirs = [
-        *[os.path.join(BASE_DATA_PATH, robot_str + '_' + sensor_str, task, 'train') for task in tasks],
-        *[os.path.join(BASE_DATA_PATH, robot_str + '_' + sensor_str, task, 'val') for task in tasks]
+        *[os.path.join(BASE_DATA_PATH, output_dir, task, train_dir_name) for task in args.tasks],
+        *[os.path.join(BASE_DATA_PATH, output_dir, task, val_dir_name) for task in args.tasks]
     ]
 
     learning_params, preproc_params = setup_learning()

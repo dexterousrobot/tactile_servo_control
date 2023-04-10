@@ -1,7 +1,8 @@
 """
-python evaluate_model.py -r cr -m simple_cnn -t edge_3d
+python evaluate_model.py -r sim -m simple_cnn -t edge_2d
 """
 import os
+import itertools as it
 import pandas as pd
 from torch.autograd import Variable
 import torch
@@ -10,13 +11,11 @@ from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, 
 from tactile_data.utils_data import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
-from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 
-from setup_training import csv_row_to_label
-from utils_learning import LabelEncoder
-from utils_plots import RegressErrorPlotter
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+from tactile_servo_control.learning.setup_training import csv_row_to_label
+from tactile_servo_control.learning.utils_learning import LabelEncoder
+from tactile_servo_control.learning.utils_plots import RegressErrorPlotter
+from tactile_servo_control.utils.parse_args import parse_args
 
 
 def evaluate_model(
@@ -89,27 +88,29 @@ def evaluate_model(
 
 if __name__ == "__main__":
 
-    robot, sensor, tasks, models, _, device = setup_parse_args(
-        robot='cr', 
-        sensor='tactip_331',
-        tasks=['surface_3d'],
+    args = parse_args(
+        robot='sim', 
+        sensor='tactip',
+        tasks=['edge_2d'],
         models=['simple_cnn'],
+        version=['test'],
         device='cuda'
     )
-
-    model_version = ''
-
+    
     # test the trained networks
-    for model_type, task in zip(models, tasks):
+    for args.task, args.model in it.product(args.tasks, args.models):
+
+        output_dir = '_'.join([args.robot, args.sensor])
+        val_dir_name = '_'.join(["val", *args.version])      
+        model_dir_name = '_'.join([args.model, *args.version])
 
         val_data_dirs = [
-            # os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val')
-            # os.path.join(BASE_DATA_PATH, robot+'_'+sensor, task, 'val')
-            os.path.join(BASE_RUNS_PATH, robot+'_'+sensor, task, model_type)
+            os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name)
+            # os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
         ]
 
         # set model dir
-        model_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, model_type + model_version)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
 
         # setup parameters
         learning_params = load_json_obj(os.path.join(model_dir, 'learning_params'))
@@ -118,11 +119,11 @@ if __name__ == "__main__":
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
 
         # create the label encoder/decoder
-        label_encoder = LabelEncoder(task_params, device=device)
+        label_encoder = LabelEncoder(task_params, device=args.device)
         
         # create plotter of prediction errors
-        # error_plotter = RegressErrorPlotter(task_params, model_dir, name='error_plot_best.png')
-        error_plotter = RegressErrorPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
+        error_plotter = RegressErrorPlotter(task_params, model_dir, name='error_plot_best.png')
+        # error_plotter = RegressErrorPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
         
         # create the model
         model = create_model(
@@ -131,7 +132,7 @@ if __name__ == "__main__":
             out_dim=label_encoder.out_dim,
             model_params=model_params,
             saved_model_dir=model_dir,
-            device=device
+            device=args.device
         )
         model.eval()
 
@@ -147,5 +148,5 @@ if __name__ == "__main__":
             val_generator,
             learning_params,
             error_plotter,
-            device=device
+            device=args.device
         )

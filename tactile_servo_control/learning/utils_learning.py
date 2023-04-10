@@ -3,6 +3,7 @@ python utils_learning.py -r cr -s tactip_331 -m simple_cnn -t edge_2d
 """
 import os
 import pickle
+import itertools as it
 import numpy as np
 import pandas as pd
 import torch
@@ -12,10 +13,9 @@ from tactile_data.tactile_servo_control import BASE_MODEL_PATH
 from tactile_data.utils_data import load_json_obj
 from tactile_image_processing.image_transforms import process_image
 from tactile_learning.utils.utils_plots import LearningPlotter
-from tactile_servo_control.learning.utils_plots import RegressErrorPlotter
-from tactile_servo_control.utils.setup_parse_args import setup_parse_args
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+from tactile_servo_control.learning.utils_plots import RegressErrorPlotter
+from tactile_servo_control.utils.parse_args import parse_args
 
 
 class LabelEncoder:
@@ -218,20 +218,22 @@ class LabelledModel:
 
 if __name__ == '__main__':
 
-    robot, sensor, tasks, models, _, device = setup_parse_args(
-        robot='cr',
-        sensor='tactip_331',
-        tasks=['edge_5d'],
-        models=['posenet_cnn'],
+    args = parse_args(
+        robot='sim', 
+        sensor='tactip',
+        tasks=['edge_2d'],
+        models=['simple_cnn'],
+        # version=['sorted'],
         device='cuda'
     )
 
-    model_version = ''
+    for args.task, args.model in it.product(args.tasks, args.models):
 
-    for task, model_type in zip(tasks, models):
+        output_dir = '_'.join([args.robot, args.sensor])
+        model_dir_name = '_'.join([args.model, *args.version])
 
         # set save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, robot+'_'+sensor, task, model_type + model_version)
+        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
 
         # create task params
         task_params = load_json_obj(os.path.join(save_dir, 'task_params'))
