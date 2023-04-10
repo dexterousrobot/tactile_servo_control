@@ -2,20 +2,19 @@
 python test_model.py -r sim -m simple_cnn -t edge_2d
 """
 import os
+import itertools as it
 import numpy as np
 import pandas as pd
 
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils_data import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
+
 from tactile_servo_control.collect_data.utils_collect_data import setup_target_df
-from tactile_servo_control.utils.setup_parse_args import setup_parse_args
+from tactile_servo_control.learning.utils_learning import LabelEncoder, LabelledModel
+from tactile_servo_control.learning.utils_plots import RegressErrorPlotter
+from tactile_servo_control.utils.parse_args import parse_args
 from tactile_servo_control.utils.setup_embodiment import setup_embodiment
-
-from utils_learning import LabelEncoder, LabelledModel
-from utils_plots import RegressErrorPlotter
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 def test_model(
@@ -25,7 +24,7 @@ def test_model(
     collect_params,
     targets_df,
     preds_df,
-    model_dir,
+    save_dir,
     error_plotter
 ):
     # start 50mm above workframe origin
@@ -69,8 +68,8 @@ def test_model(
             robot.move_joints(joint_angles)
 
     # save results
-    preds_df.to_csv(os.path.join(model_dir, 'predictions.csv'), index=False)
-    targets_df.to_csv(os.path.join(model_dir, 'targets.csv'), index=False)
+    preds_df.to_csv(os.path.join(save_dir, 'predictions.csv'), index=False)
+    targets_df.to_csv(os.path.join(save_dir, 'targets.csv'), index=False)
     error_plotter.final_plot(preds_df, targets_df)
 
     # finish 50mm above workframe origin then zero last joint 
@@ -81,28 +80,31 @@ def test_model(
 
 if __name__ == "__main__":
 
-    robot_str, sensor_str, tasks, models, _, device = setup_parse_args(
-        robot='cr', 
-        sensor='tactip_331',
-        tasks=['edge_5d'],
+    args = parse_args(
+        robot='sim', 
+        sensor='tactip',
+        tasks=['edge_2d'],
         models=['simple_cnn'],
+        version=['test'],
         device='cuda'
     )
 
-    model_version = ''
     num_poses = 100
 
     # test the trained networks
-    for task, model_str in zip(tasks, models):
+    for args.task, args.model in it.product(args.tasks, args.models):
+
+        output_dir = '_'.join([args.robot, args.sensor])
+        model_dir_name = '_'.join([args.model, *args.version]) 
 
         #  setup save dir
-        save_dir = os.path.join(BASE_RUNS_PATH, robot_str+'_'+sensor_str, task, model_str+model_version)
+        save_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
         image_dir = os.path.join(save_dir, "processed_images")
         make_dir(save_dir)
         make_dir(image_dir)
 
         # set data and model dir
-        model_dir = os.path.join(BASE_MODEL_PATH, robot_str+'_'+sensor_str, task, model_str+model_version)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
 
         # load params
         collect_params = load_json_obj(os.path.join(model_dir, 'collect_params'))
@@ -117,7 +119,7 @@ if __name__ == "__main__":
         preds_df = pd.DataFrame(columns=task_params['label_names'])
 
         # create the label encoder/decoder
-        label_encoder = LabelEncoder(task_params, device)
+        label_encoder = LabelEncoder(task_params, args.device)
         error_plotter = RegressErrorPlotter(task_params, save_dir, name='test_plot.png', plot_interp=False)
 
         # setup embodiment, network and model
@@ -133,7 +135,7 @@ if __name__ == "__main__":
             out_dim=label_encoder.out_dim,
             model_params=model_params,
             saved_model_dir=model_dir,
-            device=device
+            device=args.device
         )
         model.eval()
 
@@ -141,7 +143,7 @@ if __name__ == "__main__":
             model,
             preproc_params['image_processing'],
             label_encoder,
-            device
+            args.device
         )
 
         test_model(
@@ -151,6 +153,6 @@ if __name__ == "__main__":
             collect_params,
             targets_df,
             preds_df,
-            model_dir,
+            save_dir,
             error_plotter
         )

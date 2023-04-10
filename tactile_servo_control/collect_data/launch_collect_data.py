@@ -1,19 +1,16 @@
 """
-python launch_collect_data.py -r sim -s tactip -t surface_3d
+python launch_collect_data.py -r sim -s tactip -t edge_5d
 """
 import os
 import numpy as np
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_data.utils_data import make_dir
+
+from tactile_servo_control.collect_data.setup_collect_data import setup_collect_data
+from tactile_servo_control.collect_data.utils_collect_data import setup_target_df
 from tactile_servo_control.utils.setup_embodiment import setup_embodiment
-from tactile_servo_control.utils.setup_parse_args import setup_parse_args
-
-from setup_collect_data import setup_collect_data
-from utils_collect_data import setup_target_df
-
-
-np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+from tactile_servo_control.utils.parse_args import parse_args
 
 
 def collect_data(
@@ -73,31 +70,36 @@ def collect_data(
     robot.close()
 
 
-def launch(
-    robot='sim',
-    sensor='tactip',
-    tasks=['edge_5d']
-):
+def launch():
+
+    args = parse_args(
+        robot='sim', 
+        sensor='tactip',
+        tasks=['edge_2d'],
+        version=['test']
+    )
+    
     data_params = {
-        'data': 5000,
+        'data': 500,
     }
 
-    robot_str, sensor_str, tasks, _, _, _ = setup_parse_args(robot, sensor, tasks)
+    for args.task in args.tasks:
+        for data_dir_name, num_samples in data_params.items():
 
-    for task in tasks:
-        for dir_name, num_samples in data_params.items():
+            data_dir_name = '_'.join([data_dir_name, *args.version])
+            output_dir = '_'.join([args.robot, args.sensor]) 
 
             # setup save dir
-            save_dir = os.path.join(BASE_DATA_PATH, robot_str + '_' + sensor_str + '_temp', task, dir_name)
+            save_dir = os.path.join(BASE_DATA_PATH, output_dir, args.task, data_dir_name)
             image_dir = os.path.join(save_dir, "images")
             make_dir(save_dir)
             make_dir(image_dir)
 
             # setup parameters
             collect_params, env_params, sensor_params = setup_collect_data(
-                robot_str,
-                sensor_str,
-                task,
+                args.robot,
+                args.sensor,
+                args.task,
                 save_dir
             )
 
