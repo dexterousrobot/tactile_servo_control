@@ -36,8 +36,6 @@ def evaluate_model(
 
     # complete dateframe of predictions and targets
     target_label_names = label_encoder.target_label_names
-    acc_df = pd.DataFrame(columns=[*target_label_names, 'overall_acc'])
-    err_df = pd.DataFrame(columns=target_label_names)
     pred_df = pd.DataFrame(columns=target_label_names)
     targ_df = pd.DataFrame(columns=target_label_names)
 
@@ -61,20 +59,13 @@ def evaluate_model(
         pred_df = pd.concat([pred_df, batch_pred_df])
         targ_df = pd.concat([targ_df, batch_targ_df])
 
-        # get errors and accuracy
-        batch_err_df, batch_acc_df = label_encoder.calc_batch_metrics(pred_dict, targ_dict)
-
-        # append error to dataframe
-        err_df = pd.concat([err_df, batch_err_df])
-        acc_df = pd.concat([acc_df, batch_acc_df])
-
     # reset indices to be 0 -> test set size
     pred_df = pred_df.reset_index(drop=True).fillna(0.0)
     targ_df = targ_df.reset_index(drop=True).fillna(0.0)
-    acc_df = acc_df.reset_index(drop=True).fillna(0.0)
-    err_df = err_df.reset_index(drop=True).fillna(0.0)
 
     print("Metrics")
+    metrics = label_encoder.calc_metrics(pred_df, targ_df)
+    err_df, acc_df = metrics['err'], metrics['acc']
     print("evaluated_acc:")
     print(acc_df[[*target_label_names, 'overall_acc']].mean())
     print("evaluated_err:")
@@ -82,7 +73,7 @@ def evaluate_model(
 
     # plot full error graph
     error_plotter.final_plot(
-        pred_df, targ_df, err_df
+        pred_df, targ_df, metrics
     )
 
 

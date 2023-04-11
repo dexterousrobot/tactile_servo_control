@@ -77,7 +77,7 @@ class LabelEncoder:
             target = labels_dict[label_name].float().to(self.device)
 
             # normalize pose label within limits
-            if not label_name in self.periodic_label_names:
+            if label_name not in self.periodic_label_names:
                 encoded_pose.append(weight * self.encode_norm(target, label_name))
 
             # if periodic use sine/cosine encoding of angle
@@ -111,39 +111,56 @@ class LabelEncoder:
 
         return decoded_pose
 
-    def calc_batch_metrics(self, labels, predictions):
+    def print_metrics(self, metrics):
+        """
+        Formatted print of metrics given by calc_metrics.
+        """
+        err_df, acc_df = metrics['err'], metrics['acc']
+        print('Error: ')
+        print(err_df[self.target_label_names].mean())
+        print('Accuracy: ')
+        print(acc_df[self.target_label_names].mean())
+
+    def write_metrics(self, writer, metrics, epoch, mode='val'):
+        """
+        Write metrics given by calc_metrics to tensorboard.
+        """
+        err_df, acc_df = metrics['err'], metrics['acc']
+        for label_name in self.target_label_names:
+            writer.add_scalar(f'accuracy/{mode}/{label_name}', acc_df[label_name].mean(), epoch)
+            writer.add_scalar(f'loss/{mode}/{label_name}', err_df[label_name].mean(), epoch)
+
+    def calc_metrics(self, labels, predictions):
         """
         Calculate metrics useful for measuring progress throughout training.
-
-        Returns: dict of metrics
-            {
-                'metric': np.array()
-            }
         """
         err_df = self.err_metric(labels, predictions)
         acc_df = self.acc_metric(err_df)
-        return err_df, acc_df
+        metrics = {
+            'err': err_df,
+            'acc': acc_df
+        }
+        return metrics
 
     def err_metric(self, labels, predictions):
         """
-        Error metric for regression problem, returns dict of errors.
+        Error metric for regression problem, returns df of errors.
         """
         err_df = pd.DataFrame(columns=self.label_names)
         for label_name in self.target_label_names:
-
             if label_name not in self.periodic_label_names:
-                abs_err = torch.abs(
+                abs_err = np.abs(
                     labels[label_name] - predictions[label_name]
-                ).detach().cpu().numpy()
+                )
 
             elif label_name in self.periodic_label_names:
                 targ_rot = labels[label_name] * np.pi/180
                 pred_rot = predictions[label_name] * np.pi/180
 
                 # Calculate angle difference, taking into account periodicity (thanks ChatGPT)
-                abs_err = torch.abs(
-                    torch.atan2(torch.sin(targ_rot - pred_rot), torch.cos(targ_rot - pred_rot))
-                ).detach().cpu().numpy() * 180/np.pi
+                abs_err = np.abs(
+                    np.arctan2(np.sin(targ_rot - pred_rot), np.cos(targ_rot - pred_rot))
+                ) * 180/np.pi
 
             err_df[label_name] = abs_err
 
@@ -152,6 +169,7 @@ class LabelEncoder:
     def acc_metric(self, err_df):
         """
         Accuracy metric for regression problem, counting the number of predictions within a tolerance.
+        Returns df of accuracies.
         """
 
         batch_size = err_df.shape[0]

@@ -39,12 +39,14 @@ class RegressErrorPlotter:
         self,
         pred_df,
         targ_df,
-        err_df=None,
+        metrics=None,
     ):
         for ax in self._axs.flat:
             ax.clear()
 
         n_smooth = int(pred_df.shape[0] / 20)
+
+        err_df = metrics['err']
 
         for ax, label_name in zip(self._axs.flat, self.target_label_names):
             if label_name:
@@ -106,16 +108,14 @@ class RegressErrorPlotter:
         self,
         pred_df,
         targ_df,
-        err_df=None,
+        metrics=None,
     ):
         if not self.plot_during_training:
             self._fig, self._axs = plt.subplots(self.n_rows, self.n_cols,
                                                 figsize=(4*self.n_cols, 3.5*self.n_rows))
             self._fig.subplots_adjust(wspace=0.3)
 
-        self.update(
-            pred_df, targ_df, err_df
-        )
+        self.update(pred_df, targ_df, metrics)
         plt.show()
 
 

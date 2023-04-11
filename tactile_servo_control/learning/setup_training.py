@@ -25,6 +25,8 @@ def setup_learning(save_dir=None):
         'adam_b2': 0.999,
         'shuffle': True,
         'n_cpu': 1,
+        'n_train_batches_per_epoch': None,
+        'n_val_batches_per_epoch': None,
     }
 
     image_processing_params = {
