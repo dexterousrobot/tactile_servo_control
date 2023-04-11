@@ -22,21 +22,21 @@ from tactile_servo_control.utils.parse_args import parse_args
 def launch():
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        version=['test'],
+        version=[''],
         device='cuda'
     )
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(["train", *args.version])
-    val_dir_name = '_'.join(["val", *args.version])      
+    train_dir_name = '_'.join(filter(None, ["train", *args.version]))
+    val_dir_name = '_'.join(filter(None, ["val", *args.version]))
 
     for args.task, args.model in it.product(args.tasks, args.models):
 
-        model_dir_name = '_'.join([args.model, *args.version]) 
+        model_dir_name = '_'.join([args.model, *args.version])
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
@@ -96,9 +96,9 @@ def launch():
 
         # create plotter of prediction errors
         error_plotter = RegressErrorPlotter(
-            task_params, 
-            save_dir, 
-            name='error_plot.png', 
+            task_params,
+            save_dir,
+            name='error_plot.png',
             # plot_during_training=True
         )
 

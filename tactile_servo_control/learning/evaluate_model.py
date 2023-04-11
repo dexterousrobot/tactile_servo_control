@@ -7,7 +7,7 @@ import pandas as pd
 from torch.autograd import Variable
 import torch
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, BASE_RUNS_PATH
+from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils_data import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
@@ -89,20 +89,20 @@ def evaluate_model(
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        version=['test'],
+        version=[''],
         device='cuda'
     )
-    
+
     # test the trained networks
     for args.task, args.model in it.product(args.tasks, args.models):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        val_dir_name = '_'.join(["val", *args.version])      
-        model_dir_name = '_'.join([args.model, *args.version])
+        val_dir_name = '_'.join(filter(None, ["val", *args.version]))
+        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
 
         val_data_dirs = [
             os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name)
@@ -120,11 +120,11 @@ if __name__ == "__main__":
 
         # create the label encoder/decoder
         label_encoder = LabelEncoder(task_params, device=args.device)
-        
+
         # create plotter of prediction errors
         error_plotter = RegressErrorPlotter(task_params, model_dir, name='error_plot_best.png')
         # error_plotter = RegressErrorPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
-        
+
         # create the model
         model = create_model(
             in_dim=preproc_params['image_processing']['dims'],

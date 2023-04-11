@@ -73,12 +73,12 @@ def collect_data(
 def launch():
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        version=['test']
+        version=['']
     )
-    
+
     data_params = {
         'data': 500,
     }
@@ -86,8 +86,8 @@ def launch():
     for args.task in args.tasks:
         for data_dir_name, num_samples in data_params.items():
 
-            data_dir_name = '_'.join([data_dir_name, *args.version])
-            output_dir = '_'.join([args.robot, args.sensor]) 
+            data_dir_name = '_'.join(filter(None, [data_dir_name, *args.version]))
+            output_dir = '_'.join([args.robot, args.sensor])
 
             # setup save dir
             save_dir = os.path.join(BASE_DATA_PATH, output_dir, args.task, data_dir_name)

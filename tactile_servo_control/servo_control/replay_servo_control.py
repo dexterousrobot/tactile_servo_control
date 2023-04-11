@@ -19,21 +19,21 @@ from tactile_servo_control.utils.parse_args import parse_args
 def launch():
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
         objects=['circle'],
-        version=['test'],
+        version=[''],
         device='cuda'
     )
 
     for args.task, args.model, args.object in it.product(args.tasks, args.models, args.objects):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        model_dir_name = '_'.join([args.model, *args.version])
-        run_dir_name = '_'.join([args.object, *args.version])
-        
+        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
+        run_dir_name = '_'.join(filter(None, [args.object, *args.version]))
+
         # setup save dir
         run_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, run_dir_name)
         image_dir = os.path.join(run_dir, "processed_images")
@@ -48,7 +48,7 @@ def launch():
         sensor_params = {'type': 'replay'}
         # env_params['work_frame'] += np.array([0, 0, 2, 0, 0, 0])
 
-        # setup the robot and sensor 
+        # setup the robot and sensor
         robot, sensor = setup_embodiment(
             env_params,
             sensor_params

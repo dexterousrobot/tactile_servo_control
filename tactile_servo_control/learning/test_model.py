@@ -49,7 +49,7 @@ def test_model(
 
         # move to above new pose (avoid changing pose in contact with object)
         robot.move_linear(pose + shear - clearance)
- 
+
         # move down to offset pose
         robot.move_linear(pose + shear)
 
@@ -73,7 +73,7 @@ def test_model(
     targets_df.to_csv(os.path.join(save_dir, 'targets.csv'), index=False)
     error_plotter.final_plot(preds_df, targets_df)
 
-    # finish 50mm above workframe origin then zero last joint 
+    # finish 50mm above workframe origin then zero last joint
     robot.move_linear((0, 0, -50, 0, 0, 0))
     robot.move_joints((*robot.joint_angles[:-1], 0))
     robot.close()
@@ -82,11 +82,11 @@ def test_model(
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        version=['test'],
+        version=[''],
         device='cuda'
     )
 
@@ -96,9 +96,9 @@ if __name__ == "__main__":
     for args.task, args.model in it.product(args.tasks, args.models):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        model_dir_name = '_'.join([args.model, *args.version]) 
+        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
 
-        #  setup save dir
+        # setup save dir
         save_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
         image_dir = os.path.join(save_dir, "processed_images")
         make_dir(save_dir)
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
 
         # create target_df
-        targets_df = setup_target_df(collect_params, num_poses, save_dir) 
+        targets_df = setup_target_df(collect_params, num_poses, save_dir)
         preds_df = pd.DataFrame(columns=task_params['label_names'])
 
         # create the label encoder/decoder
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
         # setup embodiment, network and model
         robot, sensor = setup_embodiment(
-            env_params, 
+            env_params,
             sensor_params
         )
 

@@ -219,18 +219,18 @@ class LabelledModel:
 if __name__ == '__main__':
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        # version=['sorted'],
+        version=[''],
         device='cuda'
     )
 
     for args.task, args.model in it.product(args.tasks, args.models):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        model_dir_name = '_'.join([args.model, *args.version])
+        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
 
         # set save dir
         save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)

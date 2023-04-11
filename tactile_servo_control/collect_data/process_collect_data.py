@@ -80,12 +80,12 @@ def process_data(path, dirs, process_params={}):
 
 
 def main():
-    
+
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        version=['test']
+        version=['']
     )
 
     dir_in = "data"
@@ -100,9 +100,9 @@ def main():
     }
 
     for args.task in args.tasks:
-        
-        dir_in = '_'.join([dir_in, *args.version])
-        dirs_out = ['_'.join([d, *args.version]) for d in dirs_out]
+
+        dir_in = '_'.join(filter(None, [dir_in, *args.version]))
+        dirs_out = ['_'.join(filter(None, [d, *args.version])) for d in dirs_out]
         output_dir = '_'.join([args.robot, args.sensor])
         path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
 

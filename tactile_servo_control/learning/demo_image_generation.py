@@ -13,15 +13,15 @@ from tactile_servo_control.learning.setup_training import setup_learning, csv_ro
 if __name__ == '__main__':
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        version=['test']
+        version=['']
     )
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(["train", *args.version])
-    val_dir_name = '_'.join(["val", *args.version])
+    train_dir_name = '_'.join(filter(None, ["train", *args.version]))
+    val_dir_name = '_'.join(filter(None, ["val", *args.version]))
 
     data_dirs = [
         *[os.path.join(BASE_DATA_PATH, output_dir, task, train_dir_name) for task in args.tasks],

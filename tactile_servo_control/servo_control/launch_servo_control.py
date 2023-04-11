@@ -21,8 +21,8 @@ from tactile_servo_control.utils.utils_plots import PlotContour3D as PlotContour
 
 
 def servo_control(
-    robot, 
-    sensor, 
+    robot,
+    sensor,
     pose_model,
     controller,
     image_dir,
@@ -46,8 +46,8 @@ def servo_control(
     robot.move_linear(pose)
 
     # turn on servo mode if set
-    robot.controller.servo_mode = task_params.get('servo_mode', False) 
-    robot.controller.time_delay = task_params.get('time_delay', 0.0) 
+    robot.controller.servo_mode = task_params.get('servo_mode', False)
+    robot.controller.time_delay = task_params.get('time_delay', 0.0)
 
     # timed iteration through servo control
     t_0 = t.time()
@@ -92,21 +92,21 @@ def servo_control(
 def launch():
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
         objects=['circle', 'square'],
-        version=['test'],
+        version=[''],
         device='cuda'
     )
 
     for args.task, args.model, args.object in it.product(args.tasks, args.models, args.objects):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        model_dir_name = '_'.join([args.model, *args.version])
-        run_dir_name = '_'.join([args.object, *args.version]) 
-    
+        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
+        run_dir_name = '_'.join(filter(None, [args.object, *args.version]))
+
         # setup save dir
         save_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, run_dir_name)
         image_dir = os.path.join(save_dir, "processed_images")
@@ -121,16 +121,16 @@ def launch():
 
         # setup control and update env parameters from data_dir
         control_params, env_params, task_params = setup_servo_control(
-            args.task, 
-            args.object, 
-            args.model, 
+            args.task,
+            args.object,
+            args.model,
             model_dir,
             save_dir
         )
-        
-        # setup the robot and sensor 
+
+        # setup the robot and sensor
         robot, sensor = setup_embodiment(
-            env_params,     
+            env_params,
             sensor_params
         )
 
