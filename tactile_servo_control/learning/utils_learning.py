@@ -13,8 +13,8 @@ from tactile_data.tactile_servo_control import BASE_MODEL_PATH
 from tactile_data.utils_data import load_json_obj
 from tactile_image_processing.image_transforms import process_image
 from tactile_learning.utils.utils_plots import LearningPlotter
+from tactile_learning.utils.utils_plots import RegressionPlotter
 
-from tactile_servo_control.learning.utils_plots import RegressErrorPlotter
 from tactile_servo_control.utils.parse_args import parse_args
 
 
@@ -260,7 +260,7 @@ if __name__ == '__main__':
         with open(os.path.join(save_dir, 'val_pred_targ_err.pkl'), 'rb') as f:
             pred_df, targ_df, err_df, label_names = pickle.load(f)
 
-        error_plotter = RegressErrorPlotter(task_params, save_dir, 'error_plot_best.png')
+        error_plotter = RegressionPlotter(task_params, save_dir, 'error_plot_best.png')
         error_plotter.final_plot(pred_df, targ_df, err_df)
 
         # load and plot training

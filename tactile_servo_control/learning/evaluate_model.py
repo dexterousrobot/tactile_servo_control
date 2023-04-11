@@ -11,10 +11,10 @@ from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils_data import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
+from tactile_learning.utils.utils_plots import RegressionPlotter
 
 from tactile_servo_control.learning.setup_training import csv_row_to_label
 from tactile_servo_control.learning.utils_learning import LabelEncoder
-from tactile_servo_control.learning.utils_plots import RegressErrorPlotter
 from tactile_servo_control.utils.parse_args import parse_args
 
 
@@ -113,8 +113,7 @@ if __name__ == "__main__":
         label_encoder = LabelEncoder(task_params, device=args.device)
 
         # create plotter of prediction errors
-        error_plotter = RegressErrorPlotter(task_params, model_dir, name='error_plot_best.png')
-        # error_plotter = RegressErrorPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
+        error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
 
         # create the model
         model = create_model(

@@ -9,10 +9,10 @@ import pandas as pd
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils_data import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
+from tactile_learning.utils.utils_plots import RegressionPlotter
 
 from tactile_servo_control.collect_data.utils_collect_data import setup_target_df
 from tactile_servo_control.learning.utils_learning import LabelEncoder, LabelledModel
-from tactile_servo_control.learning.utils_plots import RegressErrorPlotter
 from tactile_servo_control.utils.parse_args import parse_args
 from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
         # create the label encoder/decoder
         label_encoder = LabelEncoder(task_params, args.device)
-        error_plotter = RegressErrorPlotter(task_params, save_dir, name='test_plot.png', plot_interp=False)
+        error_plotter = RegressionPlotter(task_params, save_dir, name='test_plot.png', plot_interp=False)
 
         # setup embodiment, network and model
         robot, sensor = setup_embodiment(
