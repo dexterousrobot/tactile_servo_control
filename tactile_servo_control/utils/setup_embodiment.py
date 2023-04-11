@@ -111,7 +111,7 @@ if __name__ == '__main__':
         'work_frame': (600, 0, 200, 0, 0, 0),
         'tcp_pose': (600, 0, 0, 0, 0, 0),
         'stim_pose': (600, 0, 12.5, 0, 0, 0),
-        'show_gui': False
+        'show_gui': True
     }
 
     sensor_params = {
