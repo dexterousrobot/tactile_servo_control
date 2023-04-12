@@ -92,6 +92,7 @@ def setup_env_params(robot, task, save_dir=None):
     }
 
     if robot == 'sim':
+        env_params['speed'] = float('inf')
         env_params['stim_pose'] = (600, 0, 12.5, 0, 0, 0)
 
     if save_dir:
