@@ -1,5 +1,5 @@
 """
-python process_collect_data.py -r cr -s tactip_331 -t edge_5d
+python process_collect_data.py -r sim -s tactip -t edge_2d
 """
 import os
 import shutil

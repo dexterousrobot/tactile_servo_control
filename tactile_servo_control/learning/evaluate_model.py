@@ -67,9 +67,9 @@ def evaluate_model(
     metrics = label_encoder.calc_metrics(pred_df, targ_df)
     err_df, acc_df = metrics['err'], metrics['acc']
     print("evaluated_acc:")
-    print(acc_df[[*target_label_names, 'overall_acc']].mean())
+    print(acc_df[[*list(filter(None, target_label_names)), 'overall_acc']].mean())
     print("evaluated_err:")
-    print(err_df[target_label_names].mean())
+    print(err_df[list(filter(None, target_label_names))].mean())
 
     # plot full error graph
     error_plotter.final_plot(

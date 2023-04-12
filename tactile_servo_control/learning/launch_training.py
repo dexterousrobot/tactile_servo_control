@@ -57,20 +57,7 @@ def launch():
             save_dir
         )
 
-        # create the label encoder/decoder
-        label_encoder = LabelEncoder(task_params, args.device)
-
-        # create the model
-        seed_everything(learning_params['seed'])
-        model = create_model(
-            in_dim=preproc_params['image_processing']['dims'],
-            in_channels=1,
-            out_dim=label_encoder.out_dim,
-            model_params=model_params,
-            device=args.device
-        )
-
-        # set generators and loaders
+        # setup generators 
         train_generator = ImageDataGenerator(
             train_data_dirs,
             csv_row_to_label,
@@ -82,12 +69,18 @@ def launch():
             **preproc_params['image_processing']
         )
 
-        # create plotter of prediction errors
-        error_plotter = RegressionPlotter(
-            task_params,
-            save_dir,
-            name='error_plot.png',
-            plot_during_training=False
+        # create the label encoder/decoder and plotter
+        label_encoder = LabelEncoder(task_params, args.device)
+        error_plotter = RegressionPlotter(task_params, save_dir, plot_during_training=False)
+        
+        # create the model
+        seed_everything(learning_params['seed'])
+        model = create_model(
+            in_dim=preproc_params['image_processing']['dims'],
+            in_channels=1,
+            out_dim=label_encoder.out_dim,
+            model_params=model_params,
+            device=args.device
         )
 
         train_model_w_metrics(

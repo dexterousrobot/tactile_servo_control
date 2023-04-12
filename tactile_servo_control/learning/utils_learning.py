@@ -40,7 +40,7 @@ class LabelEncoder:
     @property
     def out_dim(self):
         periodic_dims = [self.target_label_names.count(p) for p in self.periodic_label_names]
-        return len(self.target_label_names) + sum(periodic_dims)
+        return len(list(filter(None, self.target_label_names))) + sum(periodic_dims)
 
     def encode_norm(self, target, label_name):
         llim = self.llims_torch[self.label_names.index(label_name)]
@@ -82,7 +82,7 @@ class LabelEncoder:
 
             # if periodic use sine/cosine encoding of angle
             if label_name in self.periodic_label_names:
-                encoded_pose.extend(weight * self.encode_circnorm(target))
+                encoded_pose.extend([weight * p for p in self.encode_circnorm(target)])
 
         return torch.cat(encoded_pose, 1)
 
@@ -147,7 +147,7 @@ class LabelEncoder:
         Error metric for regression problem, returns df of errors.
         """
         err_df = pd.DataFrame(columns=self.label_names)
-        for label_name in self.target_label_names:
+        for label_name in filter(None, self.target_label_names):
             if label_name not in self.periodic_label_names:
                 abs_err = np.abs(
                     labels[label_name] - predictions[label_name]
@@ -176,7 +176,7 @@ class LabelEncoder:
         acc_df = pd.DataFrame(columns=[*self.label_names, 'overall_acc'])
         overall_correct = np.ones(batch_size, dtype=bool)
 
-        for label_name, tolerence in zip(self.target_label_names, self.tolerences):
+        for label_name, tolerence in zip(filter(None, self.target_label_names), self.tolerences):
             abs_err = err_df[label_name]
             correct = (abs_err < tolerence)
 
