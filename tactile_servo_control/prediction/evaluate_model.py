@@ -48,7 +48,7 @@ def evaluate_model(
         inputs = Variable(inputs).float().to(device)
 
         # forward pass
-        outputs = model(inputs)
+        outputs = model.sample(inputs)
 
         # count correct for accuracy metric
         pred_dict = label_encoder.decode_label(outputs)

@@ -15,9 +15,9 @@ def setup_learning(save_dir=None):
 
     learning_params = {
         'seed': 42,
-        'batch_size': 64,
-        'epochs': 10,
-        'lr': 1e-4,
+        'batch_size': 16,
+        'epochs': 50,
+        'lr': 1e-5,
         'lr_factor': 0.5,
         'lr_patience': 10,
         'adam_decay': 1e-6,
@@ -118,9 +118,18 @@ def setup_model(model_type, save_dir=None):
             'mlp_dim': 512,
             'pool': 'mean',  # for regression
         }
-
     else:
         raise ValueError(f'Incorrect model_type specified: {model_type}')
+
+    model_params['enable_mdn'] = True
+    model_params['mdn_kwargs'] = {
+        'n_mdn_components': 1,
+        'model_out_dim': 128,
+        'hidden_dims': [256, 256],
+        'activation': 'relu',
+        'noise_type': 'diagonal',
+        'fixed_noise_level': None,
+    }
 
     if save_dir:
         save_json_obj(model_params, os.path.join(save_dir, 'model_params'))

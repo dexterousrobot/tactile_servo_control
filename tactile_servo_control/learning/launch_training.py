@@ -8,7 +8,7 @@ from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import make_dir
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
-from tactile_learning.supervised.train_model import train_model
+from tactile_learning.supervised.train_mdn_model import train_mdn_model
 from tactile_learning.utils.utils_learning import seed_everything
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
@@ -72,7 +72,7 @@ def launch(args):
             device=args.device
         )
 
-        train_model(
+        train_mdn_model(
             prediction_mode='regression',
             model=model,
             label_encoder=label_encoder,
@@ -80,7 +80,6 @@ def launch(args):
             val_generator=val_generator,
             learning_params=learning_params,
             save_dir=save_dir,
-            error_plotter=error_plotter,
             device=args.device
         )
 
