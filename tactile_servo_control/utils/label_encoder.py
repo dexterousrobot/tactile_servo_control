@@ -7,13 +7,10 @@ import itertools as it
 import numpy as np
 import pandas as pd
 import torch
-from torch.autograd import Variable
 
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH
-from tactile_data.utils_data import load_json_obj
-from tactile_image_processing.image_transforms import process_image
-from tactile_learning.utils.utils_plots import LearningPlotter
-from tactile_learning.utils.utils_plots import RegressionPlotter
+from tactile_data.utils import load_json_obj
+from tactile_learning.utils.utils_plots import LearningPlotter, RegressionPlotter
 
 from tactile_servo_control.utils.parse_args import parse_args
 
@@ -23,7 +20,7 @@ class LabelEncoder:
     def __init__(self, task_params, device='cuda'):
         self.device = device
         self.label_names = task_params['label_names']
-        self.target_label_names = task_params['target_label_names'].copy()
+        self.target_label_names = list(filter(None, task_params['target_label_names']))
         num_targets = len(self.target_label_names)
 
         # optional arguments
@@ -71,6 +68,7 @@ class LabelEncoder:
 
         # encode pose to predictable label
         encoded_pose = []
+        # target_label_names = filter(None, self.target_label_names)
         for label_name, weight in zip(self.target_label_names, self.target_weights):
 
             # get the target from the dict
@@ -94,6 +92,7 @@ class LabelEncoder:
 
         # decode predicted label to pose
         decoded_pose = {label: torch.zeros(outputs.shape[0]) for label in self.label_names}
+        # target_label_names = filter(None, self.target_label_names)
 
         ind = 0
         for label_name, weight in zip(self.target_label_names, self.target_weights):
@@ -187,51 +186,6 @@ class LabelEncoder:
         acc_df['overall_acc'] = overall_correct.astype(np.float32)
 
         return acc_df
-
-
-class LabelledModel:
-    def __init__(self,
-                 model,
-                 image_processing_params,
-                 label_encoder,
-                 device='cuda'
-                 ):
-        self.model = model
-        self.image_processing_params = image_processing_params
-        self.label_encoder = label_encoder
-        self.label_names = label_encoder.label_names
-        self.target_label_names = label_encoder.target_label_names
-        self.device = device
-
-    def predict(self, tactile_image):
-
-        processed_image = process_image(
-            tactile_image,
-            gray=False,
-            **self.image_processing_params
-        )
-
-        # channel first for pytorch; add batch dim
-        processed_image = np.rollaxis(processed_image, 2, 0)
-        processed_image = processed_image[np.newaxis, ...]
-
-        # perform inference with the trained model
-        model_input = Variable(torch.from_numpy(processed_image)).float().to(self.device)
-        outputs = self.model(model_input)
-
-        # decode the prediction
-        predictions_dict = self.label_encoder.decode_label(outputs)
-
-        # pack into array and report
-        print("\nPredictions: ", end="")
-        predictions_arr = np.zeros(len(self.label_names))
-        for label_name in self.target_label_names:
-            predicted_val = predictions_dict[label_name].detach().cpu().numpy()
-            predictions_arr[self.label_names.index(label_name)] = predicted_val
-            with np.printoptions(precision=2, suppress=True):
-                print(label_name, predicted_val, end=" ")
-
-        return predictions_arr
 
 
 if __name__ == '__main__':

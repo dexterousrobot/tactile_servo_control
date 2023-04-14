@@ -6,15 +6,16 @@ import itertools as it
 import numpy as np
 import pandas as pd
 
+from tactile_data.collect_data.setup_embodiment import setup_embodiment
+from tactile_data.collect_data.setup_targets import setup_targets
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
-from tactile_data.utils_data import load_json_obj, make_dir
+from tactile_data.utils import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
-from tactile_servo_control.collect_data.utils_collect_data import setup_target_df
-from tactile_servo_control.learning.utils_learning import LabelEncoder, LabelledModel
+from tactile_servo_control.learning.utils_learning import LabelEncoder
+from tactile_servo_control.prediction.utils_prediction import LabelledModel
 from tactile_servo_control.utils.parse_args import parse_args
-from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 
 
 def test_model(
@@ -86,7 +87,7 @@ if __name__ == "__main__":
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        version=[''],
+        version=['temp'],
         device='cuda'
     )
 
@@ -116,7 +117,7 @@ if __name__ == "__main__":
         task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
 
         # create target_df
-        targets_df = setup_target_df(collect_params, num_poses, save_dir)
+        targets_df = setup_targets(collect_params, num_poses, save_dir)
         preds_df = pd.DataFrame(columns=task_params['label_names'])
 
         # create the label encoder/decoder

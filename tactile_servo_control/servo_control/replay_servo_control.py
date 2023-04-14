@@ -6,13 +6,14 @@ import itertools as it
 import numpy as np
 
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
-from tactile_data.utils_data import load_json_obj
+from tactile_data.utils import load_json_obj
+from tactile_data.setup_embodiment import setup_embodiment
 from tactile_learning.supervised.models import create_model
 
-from tactile_servo_control.learning.utils_learning import LabelEncoder, LabelledModel
+from tactile_servo_control.learning.utils_learning import LabelEncoder
+from tactile_servo_control.prediction.utils_prediction import LabelledModel
 from tactile_servo_control.servo_control.launch_servo_control import servo_control
 from tactile_servo_control.utils.controller import PIDController
-from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 from tactile_servo_control.utils.parse_args import parse_args
 
 

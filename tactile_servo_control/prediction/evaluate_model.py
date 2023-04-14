@@ -8,13 +8,13 @@ from torch.autograd import Variable
 import torch
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
-from tactile_data.utils_data import load_json_obj
+from tactile_data.utils import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
 from tactile_servo_control.learning.setup_training import csv_row_to_label
-from tactile_servo_control.learning.utils_learning import LabelEncoder
+from tactile_servo_control.utils.label_encoder import LabelEncoder
 from tactile_servo_control.utils.parse_args import parse_args
 
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        version=[''],
+        version=['temp'],
         device='cuda'
     )
 

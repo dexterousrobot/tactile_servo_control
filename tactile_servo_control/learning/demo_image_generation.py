@@ -5,9 +5,9 @@ import os
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_learning.supervised.image_generator import demo_image_generation
-from tactile_servo_control.utils.parse_args import parse_args
 
 from tactile_servo_control.learning.setup_training import setup_learning, csv_row_to_label
+from tactile_servo_control.utils.parse_args import parse_args
 
 
 if __name__ == '__main__':

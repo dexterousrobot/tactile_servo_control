@@ -11,16 +11,16 @@ from functools import partial
 from hyperopt import tpe, hp, fmin, Trials, STATUS_OK, STATUS_FAIL
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
-from tactile_data.utils_data import make_dir
+from tactile_data.utils import make_dir, save_json_obj
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.simple_train_model import simple_train_model
 from tactile_learning.utils.utils_learning import seed_everything
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
-from tactile_servo_control.learning.evaluate_model import evaluate_model
 from tactile_servo_control.learning.setup_training import setup_training, csv_row_to_label
-from tactile_servo_control.learning.utils_learning import LabelEncoder
+from tactile_servo_control.prediction.evaluate_model import evaluate_model
+from tactile_servo_control.utils.label_encoder import LabelEncoder
 from tactile_servo_control.utils.parse_args import parse_args
 
 
@@ -37,39 +37,31 @@ def create_objective_func(
         device='cpu'
     ):
     trial = 0
-    
+    lowest_val_loss = float('inf')
+        
     def objective_func(args):
-        nonlocal trial
+        nonlocal trial, lowest_val_loss
 
-        # set parameters
+        params_list = [
+            learning_params,
+            task_params,
+            model_params['model_kwargs'],
+        ]
+
+        # set parameters: indexed and non-indexed
         print(f"\nTrial: {trial+1}\n")
         for arg, val in args.items(): 
             print(f'{arg}:{val}')
-            
-            # indexed parameters
-            ind = arg.split('_')[-1]
-            if ind.isdigit():
-                arg = arg.replace('_'+ind, '')
 
-                if arg in model_params['model_kwargs']:
-                    model_params['model_kwargs'][arg][int(ind)] = val
-                elif arg in learning_params:
-                    learning_params[arg][int(ind)] = val
-                elif arg in task_params:
-                    task_params[arg][int(ind)] = val
+            index = arg.split('_')[-1]
+            for params in params_list:
+                if index.isdigit():    
+                    arg_0 = arg.replace('_'+index, '')
+                    if arg_0 in params:
+                        params[arg_0][int(index)] = val
                 else:
-                    print(f'{arg} not recognized')
-            
-            # non-indexed parameters
-            else:
-                if arg in model_params['model_kwargs']:
-                    model_params['model_kwargs'][arg] = val
-                elif arg in learning_params:
-                    learning_params[arg] = val
-                elif arg in task_params:
-                    task_params[arg] = val
-                else:
-                    print(f'{arg} not recognized')
+                    if arg in params:
+                        params[arg] = val
 
         # create labels and model
         label_encoder = LabelEncoder(task_params, device)
@@ -83,7 +75,6 @@ def create_objective_func(
             display_model=False,
             device=device
         )
-        model_file = os.path.join(save_dir, 'best_model.pth')
 
         try:
             val_loss, train_time = simple_train_model(
@@ -96,19 +87,7 @@ def create_objective_func(
                 save_dir,
                 device
             )
-            shutil.copyfile(model_file, os.path.join(save_dir, f'model_{trial+1}.pth'))
             
-            if error_plotter:
-                error_plotter.name = f'error_plot_{trial+1}.png'
-                evaluate_model(
-                    model,
-                    label_encoder,
-                    val_generator,
-                    learning_params,
-                    error_plotter,
-                    device
-                )
-
             results = {
                 "loss": val_loss, 
                 "status": STATUS_OK, 
@@ -124,6 +103,26 @@ def create_objective_func(
             }
             print("Aborted trial: Resource exhausted error\n")
         
+        if val_loss < lowest_val_loss:
+            lowest_val_loss = val_loss
+
+            model_file = os.path.join(save_dir, 'best_model.pth')
+            shutil.copyfile(model_file, os.path.join(save_dir, 'hyper_best_model.pth'))
+
+            save_json_obj(model_params, os.path.join(save_dir, 'model_params'))
+            save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
+            save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
+
+            if error_plotter:
+                evaluate_model(
+                    model,
+                    label_encoder,
+                    val_generator,
+                    learning_params,
+                    error_plotter,
+                    device
+                )
+
         trial += 1
         return {**results, 'trial': trial}    
     
@@ -149,25 +148,7 @@ def format_params(params):
     return params_conv
 
 
-def launch():
-
-    args = parse_args(
-        robot='sim', 
-        sensor='tactip',
-        tasks=['edge_2d'],
-        models=['simple_cnn'],
-        version=['test'],
-        device='cuda'
-    )
-        
-    space = {
-        "activation": hp.choice(label="activation", options=('relu', 'elu')),
-        # "conv_layers": hp.choice(label="conv_layers", options=([16,]*4, [32,]*4)),
-        "dropout": hp.uniform(label="dropout", low=0, high=0.5),
-        "target_weights_1": hp.uniform(label="target_weights_1", low=0.5, high=1.5),
-    }
-    max_evals = 20
-    n_startup_jobs = 10
+def launch(args, space, max_evals=20, n_startup_jobs=10):
 
     output_dir = '_'.join([args.robot, args.sensor])
     train_dir_name = '_'.join(filter(None, ["train", *args.version]))
@@ -241,10 +222,25 @@ def launch():
         trials_df.to_csv(os.path.join(save_dir, "trials.csv"), index=False)
 
         # keep best model
-        ind = trials_df['loss'].idxmin()
-        best_model_file = os.path.join(save_dir, f'model_{ind+1}.pth')
-        shutil.copyfile(best_model_file, os.path.join(save_dir, f'best_model.pth'))
-
+        best_model_file = os.path.join(save_dir, f'hyper_best_model.pth')
+        shutil.copy(best_model_file, os.path.join(save_dir, 'best_model.pth'))
 
 if __name__ == "__main__":
-    launch()
+
+    args = parse_args(
+        robot='sim', 
+        sensor='tactip',
+        tasks=['edge_2d'],
+        models=['simple_cnn'],
+        version=['temp'],
+        device='cuda'
+    )
+
+    space = {
+        "target_weights_1": hp.uniform(label="target_weights_1", low=0.5, high=1.5),
+        "activation": hp.choice(label="activation", options=('relu', 'elu')),
+        # "conv_layers": hp.choice(label="conv_layers", options=([16,]*4, [32,]*4)),
+        "dropout": hp.uniform(label="dropout", low=0, high=0.5),
+    }
+
+    launch(args, space)
