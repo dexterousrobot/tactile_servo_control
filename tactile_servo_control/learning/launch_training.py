@@ -5,29 +5,20 @@ import os
 import itertools as it
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
-from tactile_data.utils_data import make_dir
+from tactile_data.utils import make_dir
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.train_model_w_metrics import train_model_w_metrics
 from tactile_learning.utils.utils_learning import seed_everything
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
-from tactile_servo_control.learning.evaluate_model import evaluate_model
 from tactile_servo_control.learning.setup_training import setup_training, csv_row_to_label
-from tactile_servo_control.learning.utils_learning import LabelEncoder
+from tactile_servo_control.prediction.evaluate_model import evaluate_model
+from tactile_servo_control.utils.label_encoder import LabelEncoder
 from tactile_servo_control.utils.parse_args import parse_args
 
 
-def launch():
-
-    args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        models=['simple_cnn'],
-        version=[''],
-        device='cuda'
-    )
+def launch(args):
 
     output_dir = '_'.join([args.robot, args.sensor])
     train_dir_name = '_'.join(filter(None, ["train", *args.version]))
@@ -110,4 +101,14 @@ def launch():
 
 
 if __name__ == "__main__":
-    launch()
+
+    args = parse_args(
+        robot='sim',
+        sensor='tactip',
+        tasks=['edge_2d'],
+        models=['simple_cnn'],
+        version=['data_temp'],
+        device='cuda'
+    )
+    
+    launch(args)

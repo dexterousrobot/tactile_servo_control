@@ -1,9 +1,10 @@
 import os
+import glob
 import shutil
 import numpy as np
 
-from tactile_data.utils_data import load_json_obj, save_json_obj
-from tactile_servo_control.collect_data.setup_collect_data import POSE_LABEL_NAMES
+from tactile_data.utils import load_json_obj, save_json_obj
+from tactile_data.collect_data.setup_targets import POSE_LABEL_NAMES
 
 
 def csv_row_to_label(row):
@@ -161,13 +162,12 @@ def setup_training(model_type, task, data_dirs, save_dir=None):
 
     # retain data parameters
     if save_dir:
-        shutil.copy(os.path.join(data_dirs[0], 'collect_params.json'), save_dir)
-        shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
-        shutil.copy(os.path.join(data_dirs[0], 'sensor_params.json'), save_dir)
+        for file_name in glob.glob(os.path.join(data_dirs[0], '*_params.json')):
+            shutil.copy(file_name, save_dir)
 
         # if there is sensor process params, overwrite
-        sensor_proc_params_file = os.path.join(data_dirs[0], 'sensor_process_params.json')
+        sensor_proc_params_file = os.path.join(save_dir, 'sensor_process_params.json')
         if os.path.isfile(sensor_proc_params_file):
-            shutil.copyfile(sensor_proc_params_file, os.path.join(save_dir, 'sensor_params.json'))
+            os.replace(sensor_proc_params_file, os.path.join(save_dir, 'sensor_params.json'))
 
     return learning_params, model_params, preproc_params, task_params

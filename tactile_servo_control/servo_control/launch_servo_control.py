@@ -8,14 +8,15 @@ import numpy as np
 
 from cri.transforms import inv_transform_euler
 from user_input.slider import Slider
+from tactile_data.setup_embodiment import setup_embodiment
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
-from tactile_data.utils_data import load_json_obj, make_dir
+from tactile_data.utils import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
 
-from tactile_servo_control.learning.utils_learning import LabelEncoder, LabelledModel
+from tactile_servo_control.learning.utils_learning import LabelEncoder
+from tactile_servo_control.prediction.utils_prediction import LabelledModel
 from tactile_servo_control.servo_control.setup_servo_control import setup_servo_control
 from tactile_servo_control.utils.controller import PIDController
-from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 from tactile_servo_control.utils.parse_args import parse_args
 from tactile_servo_control.utils.utils_plots import PlotContour3D as PlotContour
 

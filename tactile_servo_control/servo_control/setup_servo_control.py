@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from tactile_data.utils_data import load_json_obj, save_json_obj
+from tactile_data.utils import load_json_obj, save_json_obj
 
 
 def setup_control_params(task, save_dir=None):
