@@ -7,7 +7,7 @@ import pandas as pd
 from torch.autograd import Variable
 import torch
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
+from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
@@ -96,8 +96,8 @@ if __name__ == "__main__":
         model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
 
         val_data_dirs = [
-            os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name)
-            # os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
+            # os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name)
+            os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
         ]
 
         # set model dir
@@ -113,7 +113,8 @@ if __name__ == "__main__":
         label_encoder = LabelEncoder(task_params, device=args.device)
 
         # create plotter of prediction errors
-        error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
+        # error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
+        error_plotter = RegressionPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
 
         # create the model
         model = create_model(
