@@ -74,24 +74,24 @@ def process(args, data_params, process_params, split=None):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim',
+        robot='cr',
         sensor='tactip',
         tasks=['surface_3d'],
-        version=['temp']
+        # version=['temp']
     )
 
     data_params = {
-        'data': 500,
+        'data': 5000,
         # 'train': 400,
         # 'val': 100,
     }
 
     process_params = {
-        # 'thresh': True,
+        'thresh': [61, 5],
         'dims': (128, 128),
-        # "circle_mask_radius": 220,
-        "bbox": (12, 12, 240, 240)  # sim (12, 12, 240, 240) # midi (10, 10, 430, 430) # mini (10, 10, 310, 310)
+        "circle_mask_radius": 220, # 140 ABB # 220 CR
+        "bbox": (10, 10, 430, 430)  # sim (12, 12, 240, 240) # CR midi (10, 10, 430, 430) # MG400 mini (10, 10, 310, 310) # abb (15, 15, 315, 315)
     }
 
-    launch(args, data_params)
+    # launch(args, data_params)
     process(args, data_params, process_params, split=0.8)

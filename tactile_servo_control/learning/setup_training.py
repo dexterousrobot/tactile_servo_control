@@ -119,10 +119,10 @@ def setup_task(task_name, data_dirs, save_dir=None):
     """
 
     target_label_names_dict = {
-        'surface_3d': ['z', 'Rx', 'Ry'],
-        'edge_2d':    ['x', 'Rz'],
-        'edge_3d':    ['x', 'z', 'Rz'],
-        'edge_5d':    ['x', 'z', 'Rx', 'Ry', 'Rz'],
+        'surface_3d': ['pose_z', 'pose_Rx', 'pose_Ry'],
+        'edge_2d':    ['pose_x', 'pose_Rz'],
+        'edge_3d':    ['pose_x', 'pose_z', 'pose_Rz'],
+        'edge_5d':    ['pose_x', 'pose_z', 'pose_Rx', 'pose_Ry', 'pose_Rz'],
     }
 
     target_weights_dict = {
@@ -145,7 +145,7 @@ def setup_task(task_name, data_dirs, save_dir=None):
         'label_names': POSE_LABEL_NAMES,
         'llims': tuple(np.min(llims, axis=0).astype(float)),
         'ulims': tuple(np.max(ulims, axis=0).astype(float)),
-        'periodic_label_names': ['Rz']
+        'periodic_label_names': ['pose_Rz']
     }
 
     # save parameters

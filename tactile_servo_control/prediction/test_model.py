@@ -8,13 +8,14 @@ import pandas as pd
 
 from tactile_data.collect_data.setup_embodiment import setup_embodiment
 from tactile_data.collect_data.setup_targets import setup_targets
+from tactile_data.collect_data.setup_targets import POSE_LABEL_NAMES, SHEAR_LABEL_NAMES
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
-from tactile_servo_control.learning.utils_learning import LabelEncoder
-from tactile_servo_control.prediction.utils_prediction import LabelledModel
+from tactile_servo_control.utils.label_encoder import LabelEncoder
+from tactile_servo_control.utils.labelled_model import LabelledModel
 from tactile_servo_control.utils.parse_args import parse_args
 
 
@@ -41,8 +42,8 @@ def test_model(
     # ==== data testing loop ====
     for i, row in targets_df.iterrows():
         image_name = row.loc["sensor_image"]
-        pose = row.loc[collect_params['pose_label_names']].values.astype(float)
-        shear = row.loc[collect_params['shear_label_names']].values.astype(float)
+        pose = row.loc[POSE_LABEL_NAMES].values.astype(float)
+        shear = row.loc[SHEAR_LABEL_NAMES].values.astype(float)
 
         # report
         with np.printoptions(precision=2, suppress=True):
