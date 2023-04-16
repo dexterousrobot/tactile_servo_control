@@ -87,10 +87,9 @@ if __name__ == "__main__":
     }
 
     process_params = {
-        'thresh': [61, 5],
-        'dims': (128, 128),
-        "circle_mask_radius": 220, # 140 ABB # 220 CR
-        "bbox": (10, 10, 430, 430)  # sim (12, 12, 240, 240) # CR midi (10, 10, 430, 430) # MG400 mini (10, 10, 310, 310) # abb (15, 15, 315, 315)
+        # "thresh": [61, 5],
+        "circle_mask_radius": 140, # 140 ABB # 210 CR midi 
+        "bbox": (25, 25, 305, 305)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB (25, 25, 305, 305)
     }
 
     # launch(args, data_params)
