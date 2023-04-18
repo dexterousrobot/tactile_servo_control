@@ -95,8 +95,7 @@ def launch(args):
     for args.task, args.model, args.object in it.product(args.tasks, args.models, args.objects):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
-        run_dir_name = '_'.join(filter(None, [args.object, *args.version]))
+        run_dir_name = '_'.join(filter(None, [args.object, *args.run_version]))
 
         # setup save dir
         save_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, run_dir_name)
@@ -105,7 +104,7 @@ def launch(args):
         make_dir(image_dir)
 
         # load model, task and preproc parameters
-        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
         sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))
@@ -166,9 +165,9 @@ if __name__ == "__main__":
         robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        models=['simple_cnn'],
+        models=['simple_cnn_temp'],
         objects=['circle', 'square'],
-        version=['temp'],
+        run_version=['temp'],
         device='cuda'
     )
         
