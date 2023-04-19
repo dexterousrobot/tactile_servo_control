@@ -99,10 +99,8 @@ def evaluation(args):
         task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
 
-        # create the label encoder/decoder
+        # create the label encoder/decoder and error plotter
         label_encoder = LabelEncoder(task_params, device=args.device)
-
-        # create plotter of prediction errors
         error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
         # error_plotter = RegressionPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
 
@@ -131,6 +129,7 @@ def evaluation(args):
             error_plotter,
             device=args.device
         )
+
 
 if __name__ == "__main__":
 

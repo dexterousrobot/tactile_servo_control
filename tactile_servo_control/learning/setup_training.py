@@ -97,7 +97,7 @@ def setup_model(model_type, save_dir=None):
 
     elif 'resnet' in model_type:
         model_params = {
-            'model_type': 'nature_cnn',
+            'model_type': 'resnet',
             'model_kwargs': {
                 'layers': [2, 2, 2, 2]
             }
@@ -105,7 +105,7 @@ def setup_model(model_type, save_dir=None):
 
     elif 'vit' in model_type:
         model_params = {
-            'model_type': 'nature_cnn',
+            'model_type': 'vit',
             'model_kwargs': {
                 'patch_size': 32,
                 'dim': 128,
