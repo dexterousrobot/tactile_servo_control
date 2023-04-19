@@ -77,31 +77,21 @@ def evaluate_model(
     )
 
 
-if __name__ == "__main__":
-
-    args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        models=['simple_cnn'],
-        version=['temp'],
-        device='cuda'
-    )
+def evaluation(args):
 
     # test the trained networks
     for args.task, args.model in it.product(args.tasks, args.models):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        val_dir_name = '_'.join(filter(None, ["val", *args.version]))
-        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
+        val_dir_name = '_'.join(filter(None, ["val", *args.data_version]))
 
         val_data_dirs = [
-            # os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name)
-            os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
+            os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name)
+            # os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
         ]
 
         # set model dir
-        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
 
         # setup parameters
         learning_params = load_json_obj(os.path.join(model_dir, 'learning_params'))
@@ -109,12 +99,10 @@ if __name__ == "__main__":
         task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
 
-        # create the label encoder/decoder
+        # create the label encoder/decoder and error plotter
         label_encoder = LabelEncoder(task_params, device=args.device)
-
-        # create plotter of prediction errors
-        # error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
-        error_plotter = RegressionPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
+        error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
+        # error_plotter = RegressionPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
 
         # create the model
         model = create_model(
@@ -141,3 +129,17 @@ if __name__ == "__main__":
             error_plotter,
             device=args.device
         )
+
+
+if __name__ == "__main__":
+
+    args = parse_args(
+        robot='sim',
+        sensor='tactip',
+        tasks=['edge_2d'],
+        models=['simple_cnn_hyp_temp'],
+        data_version=['data_temp'],
+        device='cuda'
+    )
+
+    evaluation(args)

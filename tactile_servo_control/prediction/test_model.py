@@ -73,6 +73,7 @@ def test_model(
     # save results
     preds_df.to_csv(os.path.join(save_dir, 'predictions.csv'), index=False)
     targets_df.to_csv(os.path.join(save_dir, 'targets.csv'), index=False)
+    error_plotter.plot_interp = False
     error_plotter.final_plot(preds_df, targets_df)
 
     # finish 50mm above workframe origin then zero last joint
@@ -81,33 +82,22 @@ def test_model(
     robot.close()
 
 
-if __name__ == "__main__":
-
-    args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        models=['simple_cnn'],
-        version=['temp'],
-        device='cuda'
-    )
-
-    num_poses = 100
+def testing(args, num_poses):
 
     # test the trained networks
     for args.task, args.model in it.product(args.tasks, args.models):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
+        runs_dir_name = '_'.join(filter(None, [args.model, *args.run_version]))
 
         # setup save dir
-        save_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
+        save_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, runs_dir_name)
         image_dir = os.path.join(save_dir, "processed_images")
         make_dir(save_dir)
         make_dir(image_dir)
 
         # set data and model dir
-        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
 
         # load params
         collect_params = load_json_obj(os.path.join(model_dir, 'collect_params'))
@@ -123,7 +113,7 @@ if __name__ == "__main__":
 
         # create the label encoder/decoder
         label_encoder = LabelEncoder(task_params, args.device)
-        error_plotter = RegressionPlotter(task_params, save_dir, name='test_plot.png', plot_interp=False)
+        error_plotter = RegressionPlotter(task_params, save_dir, name='test_plot.png')
 
         # setup embodiment, network and model
         robot, sensor = setup_embodiment(
@@ -160,3 +150,19 @@ if __name__ == "__main__":
             image_dir,
             error_plotter
         )
+
+
+if __name__ == "__main__":
+
+    args = parse_args(
+        robot='sim',
+        sensor='tactip',
+        tasks=['edge_2d'],
+        models=['simple_cnn_temp'],
+        # run_version=[''],
+        device='cuda'
+    )
+
+    num_poses = 100
+
+    testing(args, num_poses)

@@ -19,7 +19,7 @@ def launch(args, data_params):
     for args.task in args.tasks:
         for data_dir_name, num_poses in data_params.items():
 
-            data_dir_name = '_'.join(filter(None, [data_dir_name, *args.version]))
+            data_dir_name = '_'.join(filter(None, [data_dir_name, *args.data_version]))
             output_dir = '_'.join([args.robot, args.sensor])
 
             # setup save dir
@@ -62,7 +62,7 @@ def launch(args, data_params):
 def process(args, data_params, process_params, split=None):
 
     output_dir = '_'.join([args.robot, args.sensor])
-    dir_names = ['_'.join(filter(None, [dir, *args.version])) for dir in data_params]
+    dir_names = ['_'.join(filter(None, [dir, *args.data_version])) for dir in data_params]
 
     for args.task in args.tasks:
             path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
@@ -74,24 +74,23 @@ def process(args, data_params, process_params, split=None):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='cr',
+        robot='sim',
         sensor='tactip',
-        tasks=['surface_3d'],
-        # version=['temp']
+        tasks=['edge_2d'],
+        data_version=['temp']
     )
 
     data_params = {
-        'data': 5000,
-        # 'train': 400,
-        # 'val': 100,
+        'data': 500,
+        # 'train': 4000,
+        # 'val': 1000,
     }
 
     process_params = {
-        'thresh': [61, 5],
-        'dims': (128, 128),
-        "circle_mask_radius": 220, # 140 ABB # 220 CR
-        "bbox": (10, 10, 430, 430)  # sim (12, 12, 240, 240) # CR midi (10, 10, 430, 430) # MG400 mini (10, 10, 310, 310) # abb (15, 15, 315, 315)
+        # "thresh": [61, 5],
+        # "circle_mask_radius": 140, # 140 ABB tactip # 210 CR midi 
+        "bbox": (12, 12, 240, 240)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
     }
 
-    # launch(args, data_params)
+    launch(args, data_params)
     process(args, data_params, process_params, split=0.8)

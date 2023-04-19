@@ -14,7 +14,7 @@ from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import make_dir, save_json_obj
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
-from tactile_learning.supervised.simple_train_model import simple_train_model
+from tactile_learning.supervised.train_model import train_model
 from tactile_learning.utils.utils_learning import seed_everything
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
@@ -77,7 +77,7 @@ def create_objective_func(
         )
 
         try:
-            val_loss, train_time = simple_train_model(
+            val_loss, train_time = train_model(
                 'regression',
                 model,
                 label_encoder,
@@ -85,7 +85,7 @@ def create_objective_func(
                 val_generator,
                 learning_params,
                 save_dir,
-                device
+                device=device
             )
             
             results = {
@@ -114,6 +114,7 @@ def create_objective_func(
             save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
 
             if error_plotter:
+                error_plotter.block = False
                 evaluate_model(
                     model,
                     label_encoder,
@@ -143,20 +144,20 @@ def make_trials_df(trials):
 
 def format_params(params):
     params_conv = copy.deepcopy(params)
-    params_conv['activation'] = ('relu', 'elu')[params['activation']]
-    # params_conv['conv_layers'] = ('[16,]*4', '[32,]*4')[params['conv_layers']]
+    if 'activation' in params_conv:
+        params_conv['activation'] = ('relu', 'elu')[params['activation']]
+    if 'conv_layers' in params_conv:
+        params_conv['conv_layers'] = ('[16,]*4', '[32,]*4')[params['conv_layers']]
     return params_conv
 
 
 def launch(args, space, max_evals=20, n_startup_jobs=10):
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(filter(None, ["train", *args.version]))
-    val_dir_name = '_'.join(filter(None, ["val", *args.version]))    
+    train_dir_name = '_'.join(filter(None, ["train", *args.data_version]))
+    val_dir_name = '_'.join(filter(None, ["val", *args.data_version]))    
 
     for args.task, args.model in it.product(args.tasks, args.models):
-
-        model_dir_name = '_'.join([args.model, *args.version]) 
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
@@ -167,7 +168,7 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
         make_dir(save_dir)
         
         # setup parameters
@@ -231,16 +232,16 @@ if __name__ == "__main__":
         robot='sim', 
         sensor='tactip',
         tasks=['edge_2d'],
-        models=['simple_cnn'],
-        version=['temp'],
+        models=['simple_cnn_hyp_temp'],
+        data_version=['data_temp'],
         device='cuda'
     )
 
     space = {
         "target_weights_1": hp.uniform(label="target_weights_1", low=0.5, high=1.5),
-        "activation": hp.choice(label="activation", options=('relu', 'elu')),
+        # "activation": hp.choice(label="activation", options=('relu', 'elu')),
         # "conv_layers": hp.choice(label="conv_layers", options=([16,]*4, [32,]*4)),
         "dropout": hp.uniform(label="dropout", low=0, high=0.5),
     }
 
-    launch(args, space)
+    launch(args, space, 2, 1)
