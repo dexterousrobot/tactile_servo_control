@@ -50,7 +50,7 @@ def setup_collect_params(robot, task, save_dir=None):
 
     object_poses_dict = {
         "surface": (-50, 0, 0, 0, 0, 0),
-        "edge":    (0, 0, 0, 0, 0, 0), 
+        "edge":    (0, 0, 0, 0, 0, 0),
     }
 
     collect_params = {
@@ -85,7 +85,7 @@ def setup_env_params(robot, save_dir=None):
         'cr':    (0, 0, -70, 0, 0, 0),
         'mg400': (0, 0, -50, 0, 0, 0),
         'sim':   (0, 0, -85, 0, 0, 0),
-    } ## SHOULD BE ROBOT + SENSOR 
+    }  # SHOULD BE ROBOT + SENSOR
 
     env_params = {
         'robot': robot,

@@ -26,19 +26,19 @@ from tactile_servo_control.utils.parse_args import parse_args
 
 # build hyperopt objective function
 def create_objective_func(
-        train_generator,
-        val_generator,
-        learning_params,
-        model_params, 
-        preproc_params,
-        task_params,
-        save_dir,
-        error_plotter=None,
-        device='cpu'
-    ):
+            train_generator,
+            val_generator,
+            learning_params,
+            model_params,
+            preproc_params,
+            task_params,
+            save_dir,
+            error_plotter=None,
+            device='cpu'
+        ):
     trial = 0
     lowest_val_loss = float('inf')
-        
+
     def objective_func(args):
         nonlocal trial, lowest_val_loss
 
@@ -50,12 +50,12 @@ def create_objective_func(
 
         # set parameters: indexed and non-indexed
         print(f"\nTrial: {trial+1}\n")
-        for arg, val in args.items(): 
+        for arg, val in args.items():
             print(f'{arg}:{val}')
 
             index = arg.split('_')[-1]
             for params in params_list:
-                if index.isdigit():    
+                if index.isdigit():
                     arg_0 = arg.replace('_'+index, '')
                     if arg_0 in params:
                         params[arg_0][int(index)] = val
@@ -87,22 +87,22 @@ def create_objective_func(
                 save_dir,
                 device
             )
-            
+
             results = {
-                "loss": val_loss, 
-                "status": STATUS_OK, 
+                "loss": val_loss,
+                "status": STATUS_OK,
                 "training_time": train_time,
             }
-            print(f"Loss: {results['loss']:.2}\n") 
+            print(f"Loss: {results['loss']:.2}\n")
 
         except:
             results = {
-                "loss": None, 
-                "status": STATUS_FAIL, 
-                "training_time": None, 
+                "loss": None,
+                "status": STATUS_FAIL,
+                "training_time": None,
             }
             print("Aborted trial: Resource exhausted error\n")
-        
+
         if val_loss < lowest_val_loss:
             lowest_val_loss = val_loss
 
@@ -124,15 +124,15 @@ def create_objective_func(
                 )
 
         trial += 1
-        return {**results, 'trial': trial}    
-    
+        return {**results, 'trial': trial}
+
     return objective_func
 
 
 def make_trials_df(trials):
     trials_df = pd.DataFrame()
     for i, trial in enumerate(trials):
-        trial_params = {k: v[0] if len(v)>0 else None for k, v in trial['misc']['vals'].items()}
+        trial_params = {k: v[0] if len(v) > 0 else None for k, v in trial['misc']['vals'].items()}
         trial_row = pd.DataFrame(format_params(trial_params), index=[i])
         trial_row['loss'] = trial['result']['loss']
         trial_row['status'] = trial['result']['status']
@@ -152,11 +152,11 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
 
     output_dir = '_'.join([args.robot, args.sensor])
     train_dir_name = '_'.join(filter(None, ["train", *args.version]))
-    val_dir_name = '_'.join(filter(None, ["val", *args.version]))    
+    val_dir_name = '_'.join(filter(None, ["val", *args.version]))
 
     for args.task, args.model in it.product(args.tasks, args.models):
 
-        model_dir_name = '_'.join([args.model, *args.version]) 
+        model_dir_name = '_'.join([args.model, *args.version])
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
@@ -169,7 +169,7 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
         # setup save dir
         save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
         make_dir(save_dir)
-        
+
         # setup parameters
         learning_params, model_params, preproc_params, task_params = setup_training(
             args.model,
@@ -178,7 +178,7 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
             save_dir
         )
 
-        # set generators 
+        # set generators
         train_generator = ImageDataGenerator(
             train_data_dirs,
             csv_row_to_label,
@@ -199,7 +199,7 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
             train_generator,
             val_generator,
             learning_params,
-            model_params, 
+            model_params,
             preproc_params,
             task_params,
             save_dir,
@@ -209,26 +209,27 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
 
         # optimize the model
         opt_params = fmin(
-            obj_func, 
-            space, 
-            max_evals=max_evals, 
-            trials=trials, 
+            obj_func,
+            space,
+            max_evals=max_evals,
+            trials=trials,
             algo=partial(tpe.suggest, n_startup_jobs=n_startup_jobs)
-        )   
-        
+        )
+
         # finish and report
         print(opt_params)
         trials_df = make_trials_df(trials)
         trials_df.to_csv(os.path.join(save_dir, "trials.csv"), index=False)
 
         # keep best model
-        best_model_file = os.path.join(save_dir, f'hyper_best_model.pth')
+        best_model_file = os.path.join(save_dir, 'hyper_best_model.pth')
         shutil.copy(best_model_file, os.path.join(save_dir, 'best_model.pth'))
+
 
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim', 
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],

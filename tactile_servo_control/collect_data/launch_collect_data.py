@@ -65,10 +65,9 @@ def process(args, data_params, process_params, split=None):
     dir_names = ['_'.join(filter(None, [dir, *args.version])) for dir in data_params]
 
     for args.task in args.tasks:
-            path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
-
-            dir_names = split_data(path, dir_names, split)
-            process_data(path, dir_names, process_params)
+        path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
+        dir_names = split_data(path, dir_names, split)
+        process_data(path, dir_names, process_params)
 
 
 if __name__ == "__main__":

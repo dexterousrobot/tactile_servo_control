@@ -42,7 +42,7 @@ def evaluate_model(
     for _, batch in enumerate(loader):
 
         # get inputs
-        inputs, targ_dict = batch['images'], batch['labels']
+        inputs, targ_dict = batch['inputs'], batch['labels']
 
         # wrap them in a Variable object
         inputs = Variable(inputs).float().to(device)

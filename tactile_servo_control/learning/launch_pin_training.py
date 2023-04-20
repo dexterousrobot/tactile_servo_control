@@ -6,7 +6,7 @@ import itertools as it
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import make_dir
-from tactile_learning.supervised.image_generator import ImageDataGenerator
+from tactile_learning.supervised.pin_generator import PinDataGenerator
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.train_model_w_metrics import train_model_w_metrics
 from tactile_learning.utils.utils_learning import seed_everything
@@ -26,7 +26,7 @@ def launch(args):
 
     for args.task, args.model in it.product(args.tasks, args.models):
 
-        model_dir_name = '_'.join([args.model, *args.version])
+        model_dir_name = '_'.join([args.model, *args.version, 'pins'])
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
@@ -41,23 +41,21 @@ def launch(args):
         make_dir(save_dir)
 
         # setup parameters
-        learning_params, model_params, preproc_params, task_params = setup_training(
+        learning_params, model_params, _, task_params = setup_training(
             args.model,
             args.task,
             train_data_dirs,
             save_dir
         )
 
-        # setup generators
-        train_generator = ImageDataGenerator(
+        # Configure dataloaders
+        train_generator = PinDataGenerator(
             train_data_dirs,
             csv_row_to_label,
-            **{**preproc_params['image_processing'], **preproc_params['augmentation']}
         )
-        val_generator = ImageDataGenerator(
+        val_generator = PinDataGenerator(
             val_data_dirs,
             csv_row_to_label,
-            **preproc_params['image_processing']
         )
 
         # create the label encoder/decoder and plotter
@@ -66,8 +64,9 @@ def launch(args):
 
         # create the model
         seed_everything(learning_params['seed'])
+        n_pins = 127
         model = create_model(
-            in_dim=preproc_params['image_processing']['dims'],
+            in_dim=n_pins*2,
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
@@ -106,7 +105,7 @@ if __name__ == "__main__":
         robot='abb',
         sensor='tactip_pins',
         tasks=['edge_2d'],
-        models=['simple_cnn'],
+        models=['fcn'],
         version=[''],
         device='cuda'
     )

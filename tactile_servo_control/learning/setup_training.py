@@ -16,8 +16,8 @@ def setup_learning(save_dir=None):
 
     learning_params = {
         'seed': 42,
-        'batch_size': 16,
-        'epochs': 10,
+        'batch_size': 32,
+        'epochs': 250,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -63,7 +63,15 @@ def setup_model(model_type, save_dir=None):
         'model_type': model_type
     }
 
-    if model_type == 'simple_cnn':
+    if model_type == 'fcn':
+        model_params['model_kwargs'] = {
+                'fc_layers': [2048, 1024, 512, 256, 128],
+                'activation': 'elu',
+                'dropout': 0.0,
+                'apply_batchnorm': True,
+        }
+
+    elif model_type == 'simple_cnn':
         model_params['model_kwargs'] = {
                 'conv_layers': [32, 32, 32, 32],
                 'conv_kernel_sizes': [11, 9, 7, 5],
@@ -119,10 +127,10 @@ def setup_task(task_name, data_dirs, save_dir=None):
     """
 
     target_label_names_dict = {
-        'surface_3d': ['z', 'Rx', 'Ry'],
-        'edge_2d':    ['x', 'Rz'],
-        'edge_3d':    ['x', 'z', 'Rz'],
-        'edge_5d':    ['x', 'z', 'Rx', 'Ry', 'Rz'],
+        'surface_3d': ['pose_z', 'pose_Rx', 'pose_Ry'],
+        'edge_2d':    ['pose_x', 'pose_Rz'],
+        'edge_3d':    ['pose_x', 'pose_z', 'pose_Rz'],
+        'edge_5d':    ['pose_x', 'pose_z', 'pose_Rx', 'pose_Ry', 'pose_Rz'],
     }
 
     target_weights_dict = {
@@ -145,7 +153,7 @@ def setup_task(task_name, data_dirs, save_dir=None):
         'label_names': POSE_LABEL_NAMES,
         'llims': tuple(np.min(llims, axis=0).astype(float)),
         'ulims': tuple(np.max(ulims, axis=0).astype(float)),
-        'periodic_label_names': ['Rz']
+        'periodic_label_names': ['pose_Rz']
     }
 
     # save parameters
