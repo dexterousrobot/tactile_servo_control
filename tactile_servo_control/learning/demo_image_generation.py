@@ -15,12 +15,12 @@ if __name__ == '__main__':
         robot='abb',
         sensor='tactip_pins',
         tasks=['edge_2d'],
-        version=['']
+        data_version=['data_temp']
     )
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(filter(None, ["train", *args.version]))
-    val_dir_name = '_'.join(filter(None, ["val", *args.version]))
+    train_dir_name = '_'.join(filter(None, ["train", *args.data_version]))
+    val_dir_name = '_'.join(filter(None, ["val", *args.data_version]))
 
     data_dirs = [
         *[os.path.join(BASE_DATA_PATH, output_dir, task, train_dir_name) for task in args.tasks],

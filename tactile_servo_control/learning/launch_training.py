@@ -8,7 +8,7 @@ from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import make_dir
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
-from tactile_learning.supervised.train_model_w_metrics import train_model_w_metrics
+from tactile_learning.supervised.train_model import train_model
 from tactile_learning.utils.utils_learning import seed_everything
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
@@ -21,12 +21,10 @@ from tactile_servo_control.utils.parse_args import parse_args
 def launch(args):
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(filter(None, ["train", *args.version]))
-    val_dir_name = '_'.join(filter(None, ["val", *args.version]))
+    train_dir_name = '_'.join(filter(None, ["train", *args.data_version]))
+    val_dir_name = '_'.join(filter(None, ["val", *args.data_version]))
 
     for args.task, args.model in it.product(args.tasks, args.models):
-
-        model_dir_name = '_'.join([args.model, *args.version])
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
@@ -37,7 +35,7 @@ def launch(args):
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
         make_dir(save_dir)
 
         # setup parameters
@@ -62,7 +60,7 @@ def launch(args):
 
         # create the label encoder/decoder and plotter
         label_encoder = LabelEncoder(task_params, args.device)
-        error_plotter = RegressionPlotter(task_params, save_dir, plot_during_training=False)
+        error_plotter = RegressionPlotter(task_params, save_dir, final_only=False)
 
         # create the model
         seed_everything(learning_params['seed'])
@@ -74,7 +72,7 @@ def launch(args):
             device=args.device
         )
 
-        train_model_w_metrics(
+        train_model(
             prediction_mode='regression',
             model=model,
             label_encoder=label_encoder,
@@ -83,7 +81,6 @@ def launch(args):
             learning_params=learning_params,
             save_dir=save_dir,
             error_plotter=error_plotter,
-            calculate_train_metrics=False,
             device=args.device
         )
 
@@ -106,8 +103,8 @@ if __name__ == "__main__":
         robot='abb',
         sensor='tactip_pins',
         tasks=['edge_2d'],
-        models=['simple_cnn'],
-        version=[''],
+        models=['simple_cnn_temp'],
+        data_version=['data_temp'],
         device='cuda'
     )
 

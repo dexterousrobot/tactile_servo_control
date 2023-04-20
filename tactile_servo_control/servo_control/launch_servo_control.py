@@ -7,15 +7,15 @@ import time as t
 import numpy as np
 
 from cri.transforms import inv_transform_euler
-from user_input.slider import Slider
-from tactile_data.setup_embodiment import setup_embodiment
+from tactile_data.collect_data.setup_embodiment import setup_embodiment
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
+from user_input.slider import Slider
 
-from tactile_servo_control.learning.utils_learning import LabelEncoder
-from tactile_servo_control.prediction.utils_prediction import LabelledModel
 from tactile_servo_control.servo_control.setup_servo_control import setup_servo_control
+from tactile_servo_control.utils.label_encoder import LabelEncoder
+from tactile_servo_control.utils.labelled_model import LabelledModel
 from tactile_servo_control.utils.controller import PIDController
 from tactile_servo_control.utils.parse_args import parse_args
 from tactile_servo_control.utils.utils_plots import PlotContour3D as PlotContour
@@ -90,23 +90,12 @@ def servo_control(
         plotContour.save(plot_outfile)
 
 
-def launch():
-
-    args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        models=['simple_cnn'],
-        objects=['circle', 'square'],
-        version=[''],
-        device='cuda'
-    )
+def launch(args):
 
     for args.task, args.model, args.object in it.product(args.tasks, args.models, args.objects):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
-        run_dir_name = '_'.join(filter(None, [args.object, *args.version]))
+        run_dir_name = '_'.join(filter(None, [args.object, *args.run_version]))
 
         # setup save dir
         save_dir = os.path.join(BASE_RUNS_PATH, output_dir, args.task, run_dir_name)
@@ -115,7 +104,7 @@ def launch():
         make_dir(image_dir)
 
         # load model, task and preproc parameters
-        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
         sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))
@@ -171,4 +160,15 @@ def launch():
 
 
 if __name__ == "__main__":
-    launch()
+
+    args = parse_args(
+        robot='sim',
+        sensor='tactip',
+        tasks=['edge_2d'],
+        models=['simple_cnn_temp'],
+        objects=['circle', 'square'],
+        run_version=['temp'],
+        device='cuda'
+    )
+        
+    launch(args)

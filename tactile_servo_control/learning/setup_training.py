@@ -16,8 +16,8 @@ def setup_learning(save_dir=None):
 
     learning_params = {
         'seed': 42,
-        'batch_size': 32,
-        'epochs': 250,
+        'batch_size': 16,
+        'epochs': 100,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -79,37 +79,51 @@ def setup_model(model_type, save_dir=None):
                 'activation': 'relu',
                 'dropout': 0.0,
                 'apply_batchnorm': True,
+            }
         }
 
-    elif model_type == 'posenet_cnn':
-        model_params['model_kwargs'] = {
+    elif 'posenet_cnn' in model_type:
+        model_params = {
+            'model_type': 'posenet_cnn',
+            'model_kwargs': {
                 'conv_layers': [256, 256, 256, 256, 256],
                 'conv_kernel_sizes': [3, 3, 3, 3, 3],
                 'fc_layers': [64],
                 'activation': 'elu',
                 'dropout': 0.0,
                 'apply_batchnorm': True,
+            }
         }
 
-    elif model_type == 'nature_cnn':
-        model_params['model_kwargs'] = {
-            'fc_layers': [512, 512],
-            'dropout': 0.0,
+    elif 'nature_cnn' in model_type:
+        model_params = {
+            'model_type': 'nature_cnn',
+            'model_kwargs': {
+                'fc_layers': [512, 512],
+                'dropout': 0.0,
+            }
         }
 
-    elif model_type == 'resnet':
-        model_params['model_kwargs'] = {
-            'layers': [2, 2, 2, 2],
+
+    elif 'resnet' in model_type:
+        model_params = {
+            'model_type': 'resnet',
+            'model_kwargs': {
+                'layers': [2, 2, 2, 2]
+            }
         }
 
-    elif model_type == 'vit':
-        model_params['model_kwargs'] = {
-            'patch_size': 32,
-            'dim': 128,
-            'depth': 6,
-            'heads': 8,
-            'mlp_dim': 512,
-            'pool': 'mean',  # for regression
+    elif 'vit' in model_type:
+        model_params = {
+            'model_type': 'vit',
+            'model_kwargs': {
+                'patch_size': 32,
+                'dim': 128,
+                'depth': 6,
+                'heads': 8,
+                'mlp_dim': 512,
+                'pool': 'mean',  # for regression
+            }
         }
 
     else:

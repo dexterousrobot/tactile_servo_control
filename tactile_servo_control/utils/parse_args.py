@@ -7,7 +7,8 @@ def parse_args(
         tasks=['edge_2d'],
         models=['simple_cnn'],
         objects=['circle'],
-        version=[],
+        data_version=[],
+        run_version=[],
         device='cuda'
 ):
     parser = argparse.ArgumentParser()
@@ -43,10 +44,16 @@ def parse_args(
         default=objects
     )
     parser.add_argument(
-        '-v', '--version',
+        '-dv', '--data_version',
         type=str,
-        help="Choose version from ['tap', 'shear].",
-        default=version
+        help="Choose version.",
+        default=data_version
+    )
+    parser.add_argument(
+        '-rv', '--run_version',
+        type=str,
+        help="Choose version.",
+        default=run_version
     )
     parser.add_argument(
         '-d', '--device',

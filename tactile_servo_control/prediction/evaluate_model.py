@@ -7,7 +7,7 @@ import pandas as pd
 from torch.autograd import Variable
 import torch
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
+from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
@@ -35,7 +35,7 @@ def evaluate_model(
     )
 
     # complete dateframe of predictions and targets
-    target_label_names = label_encoder.target_label_names
+    target_label_names = list(filter(None, label_encoder.target_label_names))
     pred_df = pd.DataFrame(columns=target_label_names)
     targ_df = pd.DataFrame(columns=target_label_names)
 
@@ -67,9 +67,9 @@ def evaluate_model(
     metrics = label_encoder.calc_metrics(pred_df, targ_df)
     err_df, acc_df = metrics['err'], metrics['acc']
     print("evaluated_acc:")
-    print(acc_df[[*list(filter(None, target_label_names)), 'overall_acc']].mean())
+    print(acc_df[[*target_label_names, 'overall_acc']].mean())
     print("evaluated_err:")
-    print(err_df[list(filter(None, target_label_names))].mean())
+    print(err_df[target_label_names].mean())
 
     # plot full error graph
     error_plotter.final_plot(
@@ -77,23 +77,13 @@ def evaluate_model(
     )
 
 
-if __name__ == "__main__":
-
-    args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        models=['simple_cnn'],
-        version=['temp'],
-        device='cuda'
-    )
+def evaluation(args):
 
     # test the trained networks
     for args.task, args.model in it.product(args.tasks, args.models):
 
         output_dir = '_'.join([args.robot, args.sensor])
-        val_dir_name = '_'.join(filter(None, ["val", *args.version]))
-        model_dir_name = '_'.join(filter(None, [args.model, *args.version]))
+        val_dir_name = '_'.join(filter(None, ["val", *args.data_version]))
 
         val_data_dirs = [
             os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name)
@@ -101,7 +91,7 @@ if __name__ == "__main__":
         ]
 
         # set model dir
-        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
 
         # setup parameters
         learning_params = load_json_obj(os.path.join(model_dir, 'learning_params'))
@@ -109,11 +99,10 @@ if __name__ == "__main__":
         task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
         preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
 
-        # create the label encoder/decoder
+        # create the label encoder/decoder and error plotter
         label_encoder = LabelEncoder(task_params, device=args.device)
-
-        # create plotter of prediction errors
         error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
+        # error_plotter = RegressionPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
 
         # create the model
         model = create_model(
@@ -140,3 +129,17 @@ if __name__ == "__main__":
             error_plotter,
             device=args.device
         )
+
+
+if __name__ == "__main__":
+
+    args = parse_args(
+        robot='sim',
+        sensor='tactip',
+        tasks=['edge_2d'],
+        models=['simple_cnn_hyp_temp'],
+        data_version=['data_temp'],
+        device='cuda'
+    )
+
+    evaluation(args)
