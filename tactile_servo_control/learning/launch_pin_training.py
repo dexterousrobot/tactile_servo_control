@@ -21,19 +21,17 @@ from tactile_servo_control.utils.parse_args import parse_args
 def launch(args):
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(filter(None, ["train", *args.version]))
-    val_dir_name = '_'.join(filter(None, ["val", *args.version]))
 
     for args.task, args.model in it.product(args.tasks, args.models):
 
-        model_dir_name = '_'.join([args.model, *args.version, 'pins'])
+        model_dir_name = '_'.join([args.model, *args.model_version, 'pins'])
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
-            os.path.join(BASE_DATA_PATH, output_dir, args.task, train_dir_name),
+            os.path.join(BASE_DATA_PATH, output_dir, args.task, d) for d in args.train_dirs
         ]
         val_data_dirs = [
-            os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name),
+            os.path.join(BASE_DATA_PATH, output_dir, args.task, d) for d in args.val_dirs
         ]
 
         # setup save dir
@@ -105,8 +103,10 @@ if __name__ == "__main__":
         robot='abb',
         sensor='tactip_pins',
         tasks=['edge_2d'],
+        train_dirs=['train'],
+        val_dirs=['val'],
         models=['fcn'],
-        version=[''],
+        # model_version=[''],
         device='cuda'
     )
 

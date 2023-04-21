@@ -6,24 +6,24 @@ import os
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_data.collect_data.collect_data import collect_data
 from tactile_data.collect_data.process_data import process_data, split_data
-from tactile_data.collect_data.setup_embodiment import setup_embodiment
+from tactile_data.collect_data.process_pin_data import process_pin_data
 from tactile_data.collect_data.setup_targets import setup_targets
 from tactile_data.utils import make_dir
 
 from tactile_servo_control.collect_data.setup_collect_data import setup_collect_data
 from tactile_servo_control.utils.parse_args import parse_args
+from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 
 
-def launch(args, data_params):
+def launch(args):
+
+    output_dir = '_'.join([args.robot, args.sensor])
 
     for args.task in args.tasks:
-        for data_dir_name, num_poses in data_params.items():
-
-            data_dir_name = '_'.join(filter(None, [data_dir_name, *args.data_version]))
-            output_dir = '_'.join([args.robot, args.sensor])
+        for args.data_dir, args.sample_num in zip(args.data_dirs, args.sample_nums):
 
             # setup save dir
-            save_dir = os.path.join(BASE_DATA_PATH, output_dir, args.task, data_dir_name)
+            save_dir = os.path.join(BASE_DATA_PATH, output_dir, args.task, args.data_dir)
             image_dir = os.path.join(save_dir, "images")
             make_dir(save_dir)
             make_dir(image_dir)
@@ -45,7 +45,7 @@ def launch(args, data_params):
             # setup targets to collect
             target_df = setup_targets(
                 collect_params,
-                num_poses,
+                args.sample_num,
                 save_dir
             )
 
@@ -59,37 +59,53 @@ def launch(args, data_params):
             )
 
 
-def process(args, data_params, process_params, split=None):
+def process_images(args, process_image_params, split=None):
 
     output_dir = '_'.join([args.robot, args.sensor])
-    dir_names = ['_'.join(filter(None, [dir, *args.data_version])) for dir in data_params]
 
     for args.task in args.tasks:
         path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
-        dir_names = split_data(path, dir_names, split)
-        process_data(path, dir_names, process_params)
+        data_dirs = split_data(path, args.data_dirs, split)
+        process_data(path, data_dirs, process_image_params)
+
+
+def process_keypoints(args, process_params, split=None):
+
+    output_dir = '_'.join([args.robot, args.sensor])
+
+    for args.task in args.tasks:
+        path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
+        data_dirs = split_data(path, args.data_dirs, split)
+        process_pin_data(path, data_dirs, process_params)
 
 
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim',
+        robot='abb',
         sensor='tactip',
         tasks=['edge_2d'],
-        data_version=['temp']
+        data_dirs=['train_temp', 'val_temp'],
+        sample_nums=[400, 100] 
     )
 
-    data_params = {
-        'data': 500,
-        # 'train': 4000,
-        # 'val': 1000,
-    }
-
-    process_params = {
+    process_image_params = {
         # "thresh": [61, 5],
-        # "circle_mask_radius": 140, # 140 ABB tactip # 210 CR midi 
-        "bbox": (12, 12, 240, 240)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
+        "circle_mask_radius": 140, # 140 ABB tactip # 210 CR midi 
+        "bbox": (25, 25, 305, 305)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
     }
 
-    launch(args, data_params)
-    process(args, data_params, process_params, split=0.8)
+    process_keypoint_params = {
+        'n_pins': 127,# 331
+        'detector_type': 'doh',
+        'detector_kwargs': {
+            'min_sigma': 5,
+            'max_sigma': 6,
+            'num_sigma': 5,
+            'threshold': 0.015,
+        }
+    }
+
+    # launch(args)
+    # process_images(args, process_image_params)#, split=0.8)
+    process_keypoints(args, process_keypoint_params)#, split=0.8)

@@ -6,7 +6,6 @@ import itertools as it
 import numpy as np
 import pandas as pd
 
-from tactile_data.collect_data.setup_embodiment import setup_embodiment
 from tactile_data.collect_data.setup_targets import setup_targets
 from tactile_data.collect_data.setup_targets import POSE_LABEL_NAMES, SHEAR_LABEL_NAMES
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
@@ -17,6 +16,7 @@ from tactile_learning.utils.utils_plots import RegressionPlotter
 from tactile_servo_control.utils.label_encoder import LabelEncoder
 from tactile_servo_control.utils.labelled_model import LabelledModel
 from tactile_servo_control.utils.parse_args import parse_args
+from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 
 
 def test_model(
@@ -82,12 +82,14 @@ def test_model(
     robot.close()
 
 
-def testing(args, num_poses):
+def testing(args):
+
+    output_dir = '_'.join([args.robot, args.sensor])
 
     # test the trained networks
-    for args.task, args.model in it.product(args.tasks, args.models):
+    for args.task, args.model, args.sample_num in it.product(args.tasks, args.models, args.sample_nums):
 
-        output_dir = '_'.join([args.robot, args.sensor])
+        model_dir_name = '_'.join(filter(None, [args.model, *args.model_version]))
         runs_dir_name = '_'.join(filter(None, [args.model, *args.run_version]))
 
         # setup save dir
@@ -97,7 +99,7 @@ def testing(args, num_poses):
         make_dir(image_dir)
 
         # set data and model dir
-        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
 
         # load params
         collect_params = load_json_obj(os.path.join(model_dir, 'collect_params'))
@@ -108,7 +110,7 @@ def testing(args, num_poses):
         task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
 
         # create target_df
-        targets_df = setup_targets(collect_params, num_poses, save_dir)
+        targets_df = setup_targets(collect_params, args.sample_num, save_dir)
         preds_df = pd.DataFrame(columns=task_params['label_names'])
 
         # create the label encoder/decoder
@@ -158,11 +160,11 @@ if __name__ == "__main__":
         robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        models=['simple_cnn_temp'],
-        # run_version=[''],
+        models=['simple_cnn'],
+        model_version=['temp'],
+        sample_nums=[100],
+        run_version=['temp'],
         device='cuda'
     )
 
-    num_poses = 100
-
-    testing(args, num_poses)
+    testing(args)
