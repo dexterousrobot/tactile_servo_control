@@ -5,20 +5,20 @@ from tactile_data.utils import save_json_obj
 
 def setup_sensor_params(robot, sensor, save_dir=None):
 
-    if robot == 'sim':
+    bbox_dict = {
+        'mini': (320-160,    240-160+25, 320+160,    240+160+25),
+        'midi': (320-220+10, 240-220-20, 320+220+10, 240+220-20)
+    }
+    sensor_type = 'midi'  # TODO: Fix hardcoded sensor type
+
+    if 'sim' in robot:
         sensor_params = {
             "type": "standard_tactip",
             "image_size": (256, 256),
             "show_tactile": True
         }
 
-    bbox_dict = {
-        'mini': (320-160,    240-160+25, 320+160,    240+160+25),
-        'midi': (320-220+10, 240-220-20, 320+220+10, 240+220-20)
-    }
-    sensor_type = 'midi'
-
-    if robot != 'sim':
+    else:
         sensor_params = {
             'type': sensor_type,
             'source': 0,
@@ -34,6 +34,9 @@ def setup_sensor_params(robot, sensor, save_dir=None):
 
 
 def setup_collect_params(robot, task, save_dir=None):
+
+    if robot.split('_')[0] == 'sim':
+        robot = 'sim'
 
     pose_lims_dict = {
         'surface_3d': [(0, 0, 1,  -25, -25,    0), (0, 0, 5, 25, 25,   0)],
@@ -75,6 +78,9 @@ def setup_collect_params(robot, task, save_dir=None):
 
 def setup_env_params(robot, save_dir=None):
 
+    if robot.split('_')[0] == 'sim':
+        robot = 'sim'
+
     work_frame_dict = {
         'cr':    (20, -475, 100, -180, 0, 90),
         'mg400': (285,  0, 0, -180, 0, 0),
@@ -95,7 +101,7 @@ def setup_env_params(robot, save_dir=None):
         'tcp_pose': tcp_pose_dict[robot],
     }
 
-    if robot == 'sim':
+    if 'sim' in robot:
         env_params['speed'] = float('inf')
         env_params['stim_pose'] = (600, 0, 12.5, 0, 0, 0)
 

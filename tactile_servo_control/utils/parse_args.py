@@ -5,9 +5,13 @@ def parse_args(
         robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
+        data_dirs=['train', 'val'],
+        sample_nums=[400, 100],
+        train_dirs=['train'],
+        val_dirs=['val'],
         models=['simple_cnn'],
+        model_version=[],
         objects=['circle'],
-        data_version=[],
         run_version=[],
         device='cuda'
 ):
@@ -32,22 +36,46 @@ def parse_args(
         default=tasks
     )
     parser.add_argument(
+        '-dd', '--data_dirs',
+        nargs='+',
+        help="Specify data directories (default ['train', 'val']).",
+        default=data_dirs
+    )
+    parser.add_argument(
+        '-n', '--sample_nums',
+        type=int,
+        help="Choose numbers of samples (default [400, 100]).",
+        default=sample_nums
+    )
+    parser.add_argument(
+        '-dt', '--train_dirs',
+        nargs='+',
+        help="Specify train data directories (default ['train').",
+        default=train_dirs
+    )
+    parser.add_argument(
+        '-dv', '--val_dirs',
+        nargs='+',
+        help="Specify validation data directories (default ['val']).",
+        default=val_dirs
+    )
+    parser.add_argument(
         '-m', '--models',
         nargs='+',
         help="Choose models from ['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']",
         default=models
     )
     parser.add_argument(
+        '-mv', '--model_version',
+        type=str,
+        help="Choose version.",
+        default=model_version
+    )
+    parser.add_argument(
         '-o', '--objects',
         nargs='+',
         help="Choose objects from ['circle', 'square', 'clover', 'foil', 'saddle', 'bowl']",
         default=objects
-    )
-    parser.add_argument(
-        '-dv', '--data_version',
-        type=str,
-        help="Choose version.",
-        default=data_version
     )
     parser.add_argument(
         '-rv', '--run_version',

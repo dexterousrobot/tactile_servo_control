@@ -154,21 +154,21 @@ def format_params(params):
 def launch(args, space, max_evals=20, n_startup_jobs=10):
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(filter(None, ["train", *args.data_version]))
-    val_dir_name = '_'.join(filter(None, ["val", *args.data_version]))
 
     for args.task, args.model in it.product(args.tasks, args.models):
 
+        model_dir_name = '_'.join(filter(None, [args.model, *args.model_version]))
+
         # data dirs - list of directories combined in generator
         train_data_dirs = [
-            os.path.join(BASE_DATA_PATH, output_dir, args.task, train_dir_name),
+            os.path.join(BASE_DATA_PATH, output_dir, args.task, d) for d in args.train_dirs
         ]
         val_data_dirs = [
-            os.path.join(BASE_DATA_PATH, output_dir, args.task, val_dir_name),
+            os.path.join(BASE_DATA_PATH, output_dir, args.task, d) for d in args.val_dirs
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, args.model)
+        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
         make_dir(save_dir)
 
         # setup parameters
@@ -233,8 +233,10 @@ if __name__ == "__main__":
         robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        models=['simple_cnn_hyp_temp'],
-        data_version=['data_temp'],
+        train_dirs=['train_temp'],
+        val_dirs=['val_temp'],
+        models=['simple_cnn'],
+        model_version=['hyp_temp'],
         device='cuda'
     )
 
@@ -245,4 +247,4 @@ if __name__ == "__main__":
         "dropout": hp.uniform(label="dropout", low=0, high=0.5),
     }
 
-    launch(args, space, 2, 1)
+    launch(args, space, max_evals=10, n_startup_jobs=5)

@@ -2,6 +2,7 @@
 python demo_image_generation.py -r sim -s tactip -t edge_2d
 """
 import os
+import itertools as it
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_learning.supervised.image_generator import demo_image_generation
@@ -12,19 +13,16 @@ from tactile_servo_control.utils.parse_args import parse_args
 if __name__ == '__main__':
 
     args = parse_args(
-        robot='abb',
-        sensor='tactip_pins',
+        robot='sim',
+        sensor='tactip',
         tasks=['edge_2d'],
-        data_version=['data_temp']
+        data_dirs=['train_temp', 'val_temp']
     )
 
     output_dir = '_'.join([args.robot, args.sensor])
-    train_dir_name = '_'.join(filter(None, ["train", *args.data_version]))
-    val_dir_name = '_'.join(filter(None, ["val", *args.data_version]))
 
     data_dirs = [
-        *[os.path.join(BASE_DATA_PATH, output_dir, task, train_dir_name) for task in args.tasks],
-        *[os.path.join(BASE_DATA_PATH, output_dir, task, val_dir_name) for task in args.tasks]
+        os.path.join(BASE_DATA_PATH, output_dir, *i) for i in it.product(args.tasks, args.data_dirs)
     ]
 
     learning_params, preproc_params = setup_learning()
