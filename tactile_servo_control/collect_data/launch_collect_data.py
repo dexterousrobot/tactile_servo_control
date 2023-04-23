@@ -5,8 +5,8 @@ import os
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_data.collect_data.collect_data import collect_data
-from tactile_data.collect_data.process_data import process_data, split_data
-from tactile_data.collect_data.process_pin_data import process_pin_data
+from tactile_data.collect_data.process_image_data import process_image_data, partition_data
+from tactile_data.collect_data.process_marker_data import process_marker_data
 from tactile_data.collect_data.setup_targets import setup_targets
 from tactile_data.utils import make_dir
 
@@ -29,7 +29,7 @@ def launch(args):
             make_dir(image_dir)
 
             # setup parameters
-            collect_params, env_params, sensor_params = setup_collect_data(
+            collect_params, env_params, sensor_image_params = setup_collect_data(
                 args.robot,
                 args.sensor,
                 args.task,
@@ -39,7 +39,7 @@ def launch(args):
             # setup embodiment
             robot, sensor = setup_embodiment(
                 env_params,
-                sensor_params
+                sensor_image_params
             )
 
             # setup targets to collect
@@ -59,44 +59,44 @@ def launch(args):
             )
 
 
-def process_images(args, process_image_params, split=None):
+def process_images(args, image_params, split=None):
 
     output_dir = '_'.join([args.robot, args.sensor])
 
     for args.task in args.tasks:
         path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
-        data_dirs = split_data(path, args.data_dirs, split)
-        process_data(path, data_dirs, process_image_params)
+        data_dirs = partition_data(path, args.data_dirs, split)
+        process_image_data(path, data_dirs, image_params)
 
 
-def process_keypoints(args, process_params, split=None):
+def process_markers(args, marker_params, image_params, split=None):
 
     output_dir = '_'.join([args.robot, args.sensor])
 
     for args.task in args.tasks:
         path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
-        data_dirs = split_data(path, args.data_dirs, split)
-        process_pin_data(path, data_dirs, process_params)
+        data_dirs = partition_data(path, args.data_dirs, split)
+        process_marker_data(path, data_dirs, marker_params, image_params)
 
 
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='abb',
+        robot='cr',
         sensor='tactip',
-        tasks=['edge_2d'],
-        data_dirs=['train_temp', 'val_temp'],
-        sample_nums=[400, 100] 
+        tasks=['edge_5d'],
+        data_dirs=['data_90deg'],
+        # sample_nums=[400, 100] 
     )
 
-    process_image_params = {
-        # "thresh": [61, 5],
-        "circle_mask_radius": 140, # 140 ABB tactip # 210 CR midi 
-        "bbox": (25, 25, 305, 305)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
+    image_params = {
+        "thresh": [61, 5],
+        "circle_mask_radius": 210, # 140 ABB tactip # 210 CR midi 
+        "bbox": (5, 10, 425, 430)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
     }
 
-    process_keypoint_params = {
-        'n_pins': 127,# 331
+    marker_params = {
+        'num_markers': 331, # 127, 331
         'detector_type': 'doh',
         'detector_kwargs': {
             'min_sigma': 5,
@@ -107,5 +107,5 @@ if __name__ == "__main__":
     }
 
     # launch(args)
-    # process_images(args, process_image_params)#, split=0.8)
-    process_keypoints(args, process_keypoint_params)#, split=0.8)
+    process_images(args, image_params, split=0.8)
+    # process_markers(args, marker_params, image_params, split=0.8)
