@@ -30,8 +30,8 @@ def create_objective_func(
             val_generator,
             learning_params,
             model_params,
-            preproc_params,
-            task_params,
+            image_params,
+            label_params,
             save_dir,
             error_plotter=None,
             device='cpu'
@@ -44,7 +44,7 @@ def create_objective_func(
 
         params_list = [
             learning_params,
-            task_params,
+            label_params,
             model_params['model_kwargs'],
         ]
 
@@ -64,11 +64,11 @@ def create_objective_func(
                         params[arg] = val
 
         # create labels and model
-        label_encoder = LabelEncoder(task_params, device)
+        label_encoder = LabelEncoder(label_params, device)
 
         seed_everything(learning_params['seed'])
         model = create_model(
-            in_dim=preproc_params['image_processing']['dims'],
+            in_dim=image_params['image_processing']['dims'],
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
@@ -111,7 +111,7 @@ def create_objective_func(
 
             save_json_obj(model_params, os.path.join(save_dir, 'model_params'))
             save_json_obj(learning_params, os.path.join(save_dir, 'learning_params'))
-            save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
+            save_json_obj(label_params, os.path.join(save_dir, 'model_label_params'))
 
             if error_plotter:
                 error_plotter.block = False
@@ -172,7 +172,7 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
         make_dir(save_dir)
 
         # setup parameters
-        learning_params, model_params, preproc_params, task_params = setup_training(
+        learning_params, model_params, label_params, image_params = setup_training(
             args.model,
             args.task,
             train_data_dirs,
@@ -183,16 +183,16 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
         train_generator = ImageDataGenerator(
             train_data_dirs,
             csv_row_to_label,
-            **{**preproc_params['image_processing'], **preproc_params['augmentation']}
+            **{**image_params['image_processing'], **image_params['augmentation']}
         )
         val_generator = ImageDataGenerator(
             val_data_dirs,
             csv_row_to_label,
-            **preproc_params['image_processing']
+            **image_params['image_processing']
         )
 
         # create the error plotter
-        error_plotter = RegressionPlotter(task_params, save_dir)
+        error_plotter = RegressionPlotter(label_params, save_dir)
 
         # create the hyperparameter optimization
         trials = Trials()
@@ -201,8 +201,8 @@ def launch(args, space, max_evals=20, n_startup_jobs=10):
             val_generator,
             learning_params,
             model_params,
-            preproc_params,
-            task_params,
+            image_params,
+            label_params,
             save_dir,
             error_plotter,
             args.device
@@ -233,8 +233,8 @@ if __name__ == "__main__":
         robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        train_dirs=['train_temp'],
-        val_dirs=['val_temp'],
+        train_dirs=['train_data'],
+        val_dirs=['val_data'],
         models=['simple_cnn'],
         model_version=['hyp_temp'],
         device='cuda'
@@ -247,4 +247,4 @@ if __name__ == "__main__":
         "dropout": hp.uniform(label="dropout", low=0, high=0.5),
     }
 
-    launch(args, space, max_evals=10, n_startup_jobs=5)
+    launch(args, space, max_evals=2, n_startup_jobs=1)

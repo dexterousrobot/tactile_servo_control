@@ -1,5 +1,5 @@
 """
-python evaluate_model.py -r sim -m simple_cnn -t edge_2d
+python evaluate_model.py -r abb -m simple_cnn -t edge_2d
 """
 import os
 import itertools as it
@@ -7,7 +7,7 @@ import pandas as pd
 from torch.autograd import Variable
 import torch
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, BASE_RUNS_PATH
+from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
@@ -72,6 +72,7 @@ def evaluate_model(
     print(err_df[target_label_names].mean())
 
     # plot full error graph
+    error_plotter.name = 'error_plot_best'
     error_plotter.final_plot(
         pred_df, targ_df, metrics
     )
@@ -88,7 +89,6 @@ def evaluation(args):
 
         val_data_dirs = [
             os.path.join(BASE_DATA_PATH, output_dir, args.task, dir) for dir in args.val_dirs
-            # os.path.join(BASE_RUNS_PATH, output_dir, args.task, model_dir_name)
         ]
 
         # set model dir
@@ -97,17 +97,23 @@ def evaluation(args):
         # setup parameters
         learning_params = load_json_obj(os.path.join(model_dir, 'learning_params'))
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
-        task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
-        preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
+        label_params = load_json_obj(os.path.join(model_dir, 'model_label_params'))
+        image_params = load_json_obj(os.path.join(model_dir, 'model_image_params'))
+
+        # configure dataloader
+        val_generator = ImageDataGenerator(
+            val_data_dirs,
+            csv_row_to_label,
+            **image_params['image_processing']
+        )
 
         # create the label encoder/decoder and error plotter
-        label_encoder = LabelEncoder(task_params, device=args.device)
-        error_plotter = RegressionPlotter(task_params, model_dir, name='error_plot_best.png')
-        # error_plotter = RegressionPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
+        label_encoder = LabelEncoder(label_params, device=args.device)
+        error_plotter = RegressionPlotter(label_params, model_dir)
 
-        # create the model
+        # create and evaluate the model
         model = create_model(
-            in_dim=preproc_params['image_processing']['dims'],
+            in_dim=image_params['image_processing']['dims'],
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
@@ -115,12 +121,6 @@ def evaluation(args):
             device=args.device
         )
         model.eval()
-
-        val_generator = ImageDataGenerator(
-            val_data_dirs,
-            csv_row_to_label,
-            **preproc_params['image_processing']
-        )
 
         evaluate_model(
             model,
@@ -138,9 +138,9 @@ if __name__ == "__main__":
         robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        val_dirs=['val_temp'],
+        val_dirs=['val_data'],
         models=['simple_cnn'],
-        model_version=['temp'],
+        # model_version=[''],
         device='cuda'
     )
 
