@@ -6,7 +6,6 @@ import os
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
 from tactile_data.collect_data.collect_data import collect_data
 from tactile_data.collect_data.process_image_data import process_image_data, partition_data
-from tactile_data.collect_data.process_marker_data import process_marker_data
 from tactile_data.collect_data.setup_targets import setup_targets
 from tactile_data.utils import make_dir
 
@@ -69,16 +68,6 @@ def process_images(args, image_params, split=None):
         process_image_data(path, data_dirs, image_params)
 
 
-def process_markers(args, marker_params, image_params, split=None):
-
-    output_dir = '_'.join([args.robot, args.sensor])
-
-    for args.task in args.tasks:
-        path = os.path.join(BASE_DATA_PATH, output_dir, args.task)
-        data_dirs = partition_data(path, args.data_dirs, split)
-        process_marker_data(path, data_dirs, marker_params, image_params)
-
-
 if __name__ == "__main__":
 
     args = parse_args(
@@ -95,17 +84,5 @@ if __name__ == "__main__":
         "bbox": (12, 12, 240, 240)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
     }
 
-    marker_params = {
-        'num_markers': 331, # 127, 331
-        'detector_type': 'doh',
-        'detector_kwargs': {
-            'min_sigma': 5,
-            'max_sigma': 6,
-            'num_sigma': 5,
-            'threshold': 0.015,
-        }
-    }
-
-    # launch(args)
+    launch(args)
     process_images(args, image_params, split=0.8)
-    # process_markers(args, marker_params, image_params, split=0.8)
