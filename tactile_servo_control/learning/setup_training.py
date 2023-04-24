@@ -17,7 +17,7 @@ def setup_learning(save_dir=None):
     learning_params = {
         'seed': 42,
         'batch_size': 64,
-        'epochs': 50,
+        'epochs': 10,
         'lr': 1e-4,
         'lr_factor': 0.5,
         'lr_patience': 10,
@@ -188,11 +188,12 @@ def setup_training(model_type, task, data_dirs, save_dir=None):
     is_processed = os.path.isdir(os.path.join(data_dirs[0], 'processed_images'))
 
     # retain data parameters
-    shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
-    if is_processed:
-        shutil.copy(os.path.join(data_dirs[0], 'processed_image_params.json'), save_dir)
-    else:
-        shutil.copy(os.path.join(data_dirs[0], 'sensor_image_params.json'), save_dir)
+    if save_dir:
+        shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
+        if is_processed:
+            shutil.copy(os.path.join(data_dirs[0], 'processed_image_params.json'), save_dir)
+        else:
+            shutil.copy(os.path.join(data_dirs[0], 'sensor_image_params.json'), save_dir)
 
     return learning_params, model_params, model_label_params, model_image_params
 
@@ -203,7 +204,8 @@ def setup_training_markers(model_type, task, data_dirs, save_dir=None):
     model_label_params = setup_model_labels(task, data_dirs, save_dir)
 
     # retain data parameters
-    shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
-    shutil.copy(os.path.join(data_dirs[0], 'processed_marker_params.json'), save_dir)
+    if save_dir:
+        shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
+        shutil.copy(os.path.join(data_dirs[0], 'processed_marker_params.json'), save_dir)
 
     return learning_params, model_image_params, model_label_params, {}

@@ -8,7 +8,7 @@ import pandas as pd
 
 from tactile_data.collect_data.setup_targets import setup_targets
 from tactile_data.collect_data.setup_targets import POSE_LABEL_NAMES, SHEAR_LABEL_NAMES
-from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
+from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
 from tactile_learning.utils.utils_plots import RegressionPlotter
@@ -99,33 +99,37 @@ def testing(args):
         make_dir(image_dir)
 
         # set data and model dir
+        data_dir = os.path.join(BASE_DATA_PATH, output_dir, args.task, args.train_dirs[0])
         model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
 
         # load params
-        collect_params = load_json_obj(os.path.join(model_dir, 'collect_params'))
+        collect_params = load_json_obj(os.path.join(data_dir, 'collect_params'))
         env_params = load_json_obj(os.path.join(model_dir, 'env_params'))
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
-        preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
-        sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))
-        task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
+        model_image_params = load_json_obj(os.path.join(model_dir, 'model_image_params'))
+        label_params = load_json_obj(os.path.join(model_dir, 'model_label_params'))
+        if os.path.isfile(os.path.join(model_dir, 'processed_image_params.json')):
+            sensor_image_params = load_json_obj(os.path.join(model_dir, 'processed_image_params'))
+        else:
+            sensor_image_params = load_json_obj(os.path.join(model_dir, 'sensor_image_params'))
 
         # create target_df
         targets_df = setup_targets(collect_params, args.sample_num, save_dir)
-        preds_df = pd.DataFrame(columns=task_params['label_names'])
+        preds_df = pd.DataFrame(columns=label_params['label_names'])
 
         # create the label encoder/decoder
-        label_encoder = LabelEncoder(task_params, args.device)
-        error_plotter = RegressionPlotter(task_params, save_dir, name='test_plot.png')
+        label_encoder = LabelEncoder(label_params, args.device)
+        error_plotter = RegressionPlotter(label_params, save_dir, name='test_plot.png')
 
         # setup embodiment, network and model
         robot, sensor = setup_embodiment(
             env_params,
-            sensor_params
+            sensor_image_params
         )
 
         # create the model
         model = create_model(
-            in_dim=preproc_params['image_processing']['dims'],
+            in_dim=model_image_params['image_processing']['dims'],
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
@@ -136,7 +140,7 @@ def testing(args):
 
         pose_model = LabelledModel(
             model,
-            preproc_params['image_processing'],
+            model_image_params['image_processing'],
             label_encoder,
             args.device
         )
@@ -160,10 +164,11 @@ if __name__ == "__main__":
         robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
+        train_dirs=['train_data'],
         models=['simple_cnn'],
-        model_version=['temp'],
+        model_version=[''],
         sample_nums=[100],
-        run_version=['temp'],
+        run_version=[''],
         device='cuda'
     )
 

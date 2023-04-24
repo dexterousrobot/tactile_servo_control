@@ -36,7 +36,7 @@ def evaluation(args):
         # setup parameters
         learning_params = load_json_obj(os.path.join(model_dir, 'learning_params'))
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
-        model_label_params = load_json_obj(os.path.join(model_dir, 'model_label_params'))
+        label_params = load_json_obj(os.path.join(model_dir, 'model_label_params'))
         marker_params = load_json_obj(os.path.join(model_dir, 'processed_marker_params'))
 
         # configure dataloader
@@ -47,8 +47,8 @@ def evaluation(args):
         )
 
         # create the label encoder/decoder and error plotter
-        label_encoder = LabelEncoder(model_label_params, device=args.device)
-        error_plotter = RegressionPlotter(model_label_params, model_dir)
+        label_encoder = LabelEncoder(label_params, device=args.device)
+        error_plotter = RegressionPlotter(label_params, model_dir)
         # error_plotter = RegressionPlotter(task_params, val_data_dirs[0], name='error_plot_best.png')
 
         # create and evaluate the model

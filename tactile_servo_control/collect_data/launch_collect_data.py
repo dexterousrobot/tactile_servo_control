@@ -24,7 +24,7 @@ def launch(args):
 
             # setup save dir
             save_dir = os.path.join(BASE_DATA_PATH, output_dir, args.task, args.data_dir)
-            image_dir = os.path.join(save_dir, "images")
+            image_dir = os.path.join(save_dir, "sensor_images")
             make_dir(save_dir)
             make_dir(image_dir)
 
@@ -82,17 +82,17 @@ def process_markers(args, marker_params, image_params, split=None):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='cr',
+        robot='sim',
         sensor='tactip',
-        tasks=['edge_5d'],
-        data_dirs=['data_90deg'],
-        # sample_nums=[400, 100] 
+        tasks=['edge_2d'],
+        data_dirs=['data'],
+        sample_nums=[5000] 
     )
 
     image_params = {
-        "thresh": [61, 5],
-        "circle_mask_radius": 210, # 140 ABB tactip # 210 CR midi 
-        "bbox": (5, 10, 425, 430)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
+        # "thresh": [61, 5],
+        # "circle_mask_radius": 210, # 140 ABB tactip # 210 CR midi 
+        "bbox": (12, 12, 240, 240)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
     }
 
     marker_params = {

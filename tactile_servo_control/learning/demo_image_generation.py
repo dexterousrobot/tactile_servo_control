@@ -14,10 +14,10 @@ from tactile_servo_control.utils.parse_args import parse_args
 if __name__ == '__main__':
 
     args = parse_args(
-        robot='abb',
+        robot='sim',
         sensor='tactip',
         tasks=['edge_2d'],
-        data_dirs=['train', 'val']
+        data_dirs=['train_data', 'val_data']
     )
 
     output_dir = '_'.join([args.robot, args.sensor])

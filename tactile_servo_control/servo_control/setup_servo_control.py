@@ -68,15 +68,15 @@ def update_env_params(env_params, object, save_dir=None):
     return env_params
 
 
-def update_task_params(task_params, object, model, save_dir=None):
+def setup_task_params(sample_num, model_dir, save_dir=None):
 
-    task_params.update({
-        'num_iterations': 100,
+    task_params = {
+        'num_iterations': sample_num,
         'show_plot': True,
         'show_slider': False,
-        'model': model
+        'model': model_dir
         # 'servo_delay': 0.0,
-    })
+    }
 
     if save_dir:
         save_json_obj(task_params, os.path.join(save_dir, 'task_params'))
@@ -84,12 +84,10 @@ def update_task_params(task_params, object, model, save_dir=None):
     return task_params
 
 
-def setup_servo_control(task, object, model, model_dir, save_dir=None):
-    env_params = load_json_obj(os.path.join(model_dir, 'env_params'))
-    task_params = load_json_obj(os.path.join(model_dir, 'task_params'))
-    control_params = setup_control_params(task, save_dir)
+def setup_servo_control(sample_num, task, object, model_dir, env_params, save_dir=None):
     env_params = update_env_params(env_params, object, save_dir)
-    task_params = update_task_params(task_params, object, model, save_dir)
+    control_params = setup_control_params(task, save_dir)
+    task_params = setup_task_params(sample_num, model_dir, save_dir)
 
     return control_params, env_params, task_params
 

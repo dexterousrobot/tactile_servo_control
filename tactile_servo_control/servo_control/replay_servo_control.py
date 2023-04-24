@@ -36,7 +36,8 @@ def replay(args):
         # load model, task and preproc parameters
         model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
         model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
-        preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
+        model_label_params = load_json_obj(os.path.join(model_dir, 'model_label_params'))
+        model_image_params = load_json_obj(os.path.join(model_dir, 'model_image_params'))
         sensor_params = {'type': 'replay'}
         # env_params['work_frame'] += np.array([0, 0, 2, 0, 0, 0])
 
@@ -50,11 +51,11 @@ def replay(args):
         pid_controller = PIDController(**control_params)
 
         # create the label encoder/decoder
-        label_encoder = LabelEncoder(task_params, device=args.device)
+        label_encoder = LabelEncoder(model_label_params, device=args.device)
 
         # setup the model
         model = create_model(
-            in_dim=preproc_params['image_processing']['dims'],
+            in_dim=model_image_params['image_processing']['dims'],
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
@@ -65,7 +66,7 @@ def replay(args):
 
         pose_model = LabelledModel(
             model,
-            preproc_params['image_processing'],
+            model_image_params['image_processing'],
             label_encoder,
             device=args.device
         )
@@ -88,9 +89,9 @@ if __name__ == "__main__":
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        model_version=['temp'],
+        model_version=[''],
         objects=['circle', 'square'],
-        run_version=['temp'],
+        run_version=[''],
         device='cuda'
     )
     

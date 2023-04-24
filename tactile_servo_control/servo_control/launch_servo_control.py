@@ -106,36 +106,42 @@ def launch(args):
             make_dir(save_dir)
             make_dir(image_dir)
 
-            # load model, task and preproc parameters
+            # load model, environment and image processing parameters
             model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+            env_params = load_json_obj(os.path.join(model_dir, 'env_params'))
             model_params = load_json_obj(os.path.join(model_dir, 'model_params'))
-            preproc_params = load_json_obj(os.path.join(model_dir, 'preproc_params'))
-            sensor_params = load_json_obj(os.path.join(model_dir, 'sensor_params'))
+            model_image_params = load_json_obj(os.path.join(model_dir, 'model_image_params'))
+            model_label_params = load_json_obj(os.path.join(model_dir, 'model_label_params'))
+            if os.path.isfile(os.path.join(model_dir, 'processed_image_params.json')):
+                sensor_image_params = load_json_obj(os.path.join(model_dir, 'processed_image_params'))
+            else:
+                sensor_image_params = load_json_obj(os.path.join(model_dir, 'sensor_image_params'))
 
             # setup control and update env parameters from data_dir
             control_params, env_params, task_params = setup_servo_control(
+                args.sample_num,
                 args.task,
                 args.object,
-                args.model,
-                model_dir,
+                model_dir_name,
+                env_params,
                 save_dir
             )
 
             # setup the robot and sensor
             robot, sensor = setup_embodiment(
                 env_params,
-                sensor_params
+                sensor_image_params
             )
 
             # setup the controller
             pid_controller = PIDController(**control_params)
 
             # create the label encoder/decoder
-            label_encoder = LabelEncoder(task_params, device=args.device)
+            label_encoder = LabelEncoder(model_label_params, device=args.device)
 
             # setup the model
             model = create_model(
-                in_dim=preproc_params['image_processing']['dims'],
+                in_dim=model_image_params['image_processing']['dims'],
                 in_channels=1,
                 out_dim=label_encoder.out_dim,
                 model_params=model_params,
@@ -146,7 +152,7 @@ def launch(args):
 
             pose_model = LabelledModel(
                 model,
-                preproc_params['image_processing'],
+                model_image_params['image_processing'],
                 label_encoder,
                 device=args.device
             )
@@ -169,10 +175,10 @@ if __name__ == "__main__":
         sensor='tactip',
         tasks=['edge_2d'],
         models=['simple_cnn'],
-        model_version=['temp'],
+        model_version=[''],
         objects=['circle', 'square'],
         sample_nums=[100, 100],
-        run_version=['temp'],
+        run_version=[''],
         device='cuda'
     )
         
