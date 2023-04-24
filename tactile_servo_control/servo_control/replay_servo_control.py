@@ -3,7 +3,6 @@ python replay_servo_control.py -r sim -s tactip -t edge_2d -o circle
 """
 import os
 import itertools as it
-import numpy as np
 
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_data.utils import load_json_obj
@@ -94,5 +93,5 @@ if __name__ == "__main__":
         run_version=[''],
         device='cuda'
     )
-    
+
     replay(args)

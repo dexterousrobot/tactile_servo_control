@@ -1,14 +1,12 @@
-# Tactile-Gym Servo Control
+# Tactile Servo Control
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 
 **Pose-Based Tactile Servoing**: [Video](https://www.youtube.com/watch?v=12-DJeRcfn0)&nbsp;&nbsp;•&nbsp;&nbsp;[Paper](https://ieeexplore.ieee.org/document/9502718)
 
-**Tactile Gym 2.0**: [Project Website](https://sites.google.com/my.bristol.ac.uk/tactilegym2/home) &nbsp;&nbsp;•&nbsp;&nbsp;[Paper](https://ieeexplore.ieee.org/abstract/document/9847020)
+This repo contains an implementation of the "*Pose-Based Tactile Servoing: Controlled Soft Touch Using Deep Learning*" [paper](https://ieeexplore.ieee.org/document/9502718). 
 
-**Tactile Gym 1.0**: [Project Website](https://sites.google.com/my.bristol.ac.uk/tactile-gym-sim2real/home) &nbsp;&nbsp;•&nbsp;&nbsp;[Paper](http://arxiv.org/abs/2106.08796)
-
-This repo contains a simulated implementation of the "*Pose-Based Tactile Servoing: Controlled Soft Touch Using Deep Learning*" [paper](https://ieeexplore.ieee.org/document/9502718). The data collection, supervised deep learning, and servo control procedures are implemented using the open-sourced [Tactile Gym](https://github.com/ac-93/tactile_gym) simulation platform.
+The data collection and servo control procedures are implemented in the [Tactile Sim](https://github.com/dexterousrobot/tactile_sim) simulation platform. 
 
 There are four main tasks sharing the same underlying data collection, learning and servo control methods. These are **Surface Following 3D**, **Edge Following 2D**, **Edge Following 3D** and **Edge Following 5D**.
 
@@ -22,53 +20,62 @@ There are four main tasks sharing the same underlying data collection, learning 
 
 ### Content ###
 - [Installation](#installation)
+- [Arguments](#arguments)
 - [Data Collection](#data-collection)
 - [Learning](#learning)
+- [Prediction](#prediction)
 - [Servo Control](#servo-control)
 - [Bibtex](#bibtex)
 
 
 ### Installation ###
 
-Install Tactile-Gym
-```
-git clone https://github.com/ac-93/tactile_gym.git
-cd tactile_gym
-python setup.py install
-```
+This work relies on the [Tactile Sim](https://github.com/dexterousrobot/tactile_sim), [Tactile Learning](https://github.com/dexterousrobot/tactile_learning) and [Tactile Data](https://github.com/dexterousrobot/tactile_data) reposotories. Please follow installation instructions within these repos first.
 
 Install Tactile-Gym Servo Control
+
 ```
-git clone https://github.com/ac-93/tactile_gym_servo_control.git
-cd tactile_gym_servo_control
+git clone https://github.com/dexterousrobot/tactile_servo_control.git
+cd tactile_servo_control
 pip install -e .
 ```
 
+### Arguments ###
+
+These can be found in ```utils/parse_args.py```.
+
+| **Argument** |  **Description** |  **Options**  | 
+| ---------------------|  ----------------------- |  ------------------ | 
+| `-r` `-robot`    | Which robot is being used for data collection. This is also used to find directory of training data or pre-trained models. | `sim_ur` `ur` `sim_cr` `cr` `mg400`  |
+| `-s` `-sensor` | Which sensor is being used for data collection. This is also used to find directory of training data or pre-trained models. | `sim_tactip` `tactip_127` `tactip_331` |
+| `-t` `-tasks` |  This indicates the type of data that will be collected or the type of data to be used during training. | `surface_3d` `edge_2d` `spherical_probe`  |
+| `-n` `-sample_nums` | ... | e.g. `[400, 100]`  |
+| `-dd` `-data_dirs` |  ... |  e.g. `[train, val]`   |
+| `-dt` `-train_dirs` |  ... | `train`  |
+| `-dv` `-val_dirs` |  ... | `val`  |
+| `-m` `-models` |  NN architecture to be trained. | `pix2pix` |
+| `-mv` `-model_version` |  Additional string to append to the model directory. | `exp_v1` `exp_v2` |
+| `-o` `-objects` | Objects to load into environmet. Multiple objects will be loaded sequentially. | `circle` `square` `clover` `foil` `saddle` `bowl` |
+| `-rv` `-run_version` |  Additional string to append to the run directory. | `exp_v1` `exp_v2` |
+| `-d` `-device` |  Whether to run on the GPU or CPU | `cuda` `cpu` |
+
 ### Data Collection ###
 
-Data can be quickly generated and gathered in simulation.
-
-To gather a small amount of example data with visualisation enabled run
+Example data is provided in the [Tactile Data](https://github.com/dexterousrobot/tactile_data) reposortory. Alternate data can be quickly generated and gathered in simulation using
 
 ```
-python data_collection/collect_data.py -t task_name
+python data_collection/launch_collect_data.py -t task_name
 ```
 
 where task_name is selected from ```[surface_3d edge_2d edge_3d edge_5d]```. If multiple tasks are input they will be executed in the order of input.
-
-To collect a full training and validation sets run
-
-(**WARNING** - This will gather 28,000 images - approximately 100mb)
-
-```
-python data_collection/collect_train_and_val_sets.py -t task_name
-```
 
 This can be generated significantly faster with rendering and GUI disabled on Ubuntu however a bug for pybullet on Windows causes a crash during collection in this case. The GUI should be enabled if using a Windows machine for data collection.
 
 ### Learning ###
 
-This section implements supervised deep learning methods for predicting the pose of the tactile sensors based on the tactile image gathered during data collection.  Pose is encoded and decoded for accurate NN prediction, this uses normalisation for position and  sine/cosine encoding for rotation. Details of this can be found in ```learning/learning_utils.py```.
+This directory contains helper files for launching supervised learning algorithms through the [Tactile Learning](https://github.com/dexterousrobot/tactile_learning) reposortory.
+
+The aim is to predict the pose of the tactile sensor based on the tactile image gathered during data collection.  Pose is encoded and decoded for accurate NN prediction, this uses normalisation for position and  sine/cosine encoding for rotation. Details of this can be found in ```utils/label_encoder.py```.
 
 Image processing and augmentations are used for more robust learning. To visualise the effects of these run
 
@@ -79,7 +86,7 @@ python learning/demo_image_generation.py -t task_name
 To train a CNN for pose prediction run
 
 ```
-python learning/train_cnn.py -t task_name -d device_name
+python learning/launch_training.py -t task_name -d device_name
 ```
 This will overwrite the pretrained models used for demonstrations.
 
@@ -88,7 +95,13 @@ The task, learning and image processing parameters are set within the code. For 
 A learned model can be evaluated by running
 
 ```
-python learning/test_cnn.py -t task_name -d device_name
+python prediction/evaluate_model.py -t task_name -d device_name
+```
+
+The model and algorithm hyper-parameters are set in `learning/setup_training.py`. These can be optimised by running
+
+```
+python learning/launch_hyper_training.py -t task_name -d device_name
 ```
 
 ### Servo Control ###

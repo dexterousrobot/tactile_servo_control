@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-from cri.transforms import transform_euler, inv_transform_euler
-
 
 class Controller(ABC):
     def __init__(self, t0=0, u0=0.0):
@@ -32,15 +30,15 @@ class Controller(ABC):
 
 
 class PIDController(Controller):
-    def __init__(self, 
-                 t0=0, u0=0.0, 
-                 kp=0.0, ki=0.0, kd=0.0, 
+    def __init__(self,
+                 t0=0, u0=0.0,
+                 kp=0.0, ki=0.0, kd=0.0,
                  ep_clip=[-np.inf, np.inf], ei_clip=[-np.inf, np.inf], ed_clip=[-np.inf, np.inf],
-                 alpha=1.0, 
+                 alpha=1.0,
                  ref=0.0,
                  error=lambda y, r: r-y,
                  **kwargs
-    ):
+                 ):
         super().__init__(t0=t0, u0=np.array(u0))
         self.kp = np.array(kp)
         self.ki = np.array(ki)
@@ -51,7 +49,7 @@ class PIDController(Controller):
         self.alpha = np.array(alpha)
         self.ref = np.array(ref)
         if isinstance(error, str):
-            error = eval(error) 
+            error = eval(error)
         self.error = error
 
         self.ef = 0.0
@@ -69,10 +67,10 @@ class PIDController(Controller):
 
     def _policy(self, y, r):
         e = self.error(y, r)
-        ep = np.clip(e, *self.ep_clip) 
+        ep = np.clip(e, *self.ep_clip)
 
         self.ei += e
-        self.ei = np.clip(self.ei, *self.ei_clip) 
+        self.ei = np.clip(self.ei, *self.ei_clip)
 
         if self.t == self.t0:
             self.ef = e
@@ -80,7 +78,7 @@ class PIDController(Controller):
         else:
             self.ef = (1.0 - self.alpha) * self.ef + self.alpha * e
             ed = self.ef - self.ef_prev
-        ed = np.clip(ed, *self.ed_clip) 
+        ed = np.clip(ed, *self.ed_clip)
 
         u = self.kp * ep + self.ki * self.ei + self.kd * ed
 
@@ -124,4 +122,3 @@ class PIDController(Controller):
         self.ed_hist = []
         self.ef_hist = []
         self.u_hist = []
-        

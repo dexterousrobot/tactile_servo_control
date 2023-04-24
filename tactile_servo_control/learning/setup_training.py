@@ -1,5 +1,4 @@
 import os
-import glob
 import shutil
 import numpy as np
 
@@ -107,7 +106,6 @@ def setup_model(model_type, save_dir=None):
                 'dropout': 0.0,
             }
         }
-
 
     elif model_type == 'resnet':
         model_params = {
