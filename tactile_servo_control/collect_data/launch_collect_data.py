@@ -75,13 +75,14 @@ if __name__ == "__main__":
         sensor='tactip',
         tasks=['edge_2d'],
         data_dirs=['data'],
-        sample_nums=[5000] 
+        sample_nums=[5000]
     )
 
     image_params = {
         # "thresh": [61, 5],
-        # "circle_mask_radius": 210, # 140 ABB tactip # 210 CR midi 
-        "bbox": (12, 12, 240, 240)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
+        # "circle_mask_radius": 210, # 140 ABB tactip # 210 CR midi
+        # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
+        "bbox": (12, 12, 240, 240)
     }
 
     launch(args)
