@@ -1,10 +1,10 @@
 """
-python launch_training.py -r sim -s tactip -m simple_cnn -t edge_2d
+python launch_training.py -r cr -s tactip -m simple_cnn -t surface_3d -dv data -tv shear 
 """
 import os
 import itertools as it
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
+from tactile_data_shear.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import make_dir
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
@@ -25,6 +25,7 @@ def launch(args):
     for args.task, args.model in it.product(args.tasks, args.models):
 
         model_dir_name = '_'.join(filter(None, [args.model, *args.model_version]))
+        task_name = '_'.join(filter(None, [args.task, *args.task_version]))
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
@@ -35,13 +36,13 @@ def launch(args):
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, task_name, model_dir_name)
         make_dir(save_dir)
 
         # setup parameters
         learning_params, model_params, label_params, image_params = setup_training(
             args.model,
-            args.task,
+            task_name,
             train_data_dirs,
             save_dir
         )
@@ -60,7 +61,7 @@ def launch(args):
 
         # create the label encoder/decoder and plotter
         label_encoder = LabelEncoder(label_params, args.device)
-        error_plotter = RegressionPlotter(label_params, save_dir, final_only=False)
+        error_plotter = RegressionPlotter(label_params, save_dir)
 
         # create the model
         seed_everything(learning_params['seed'])
@@ -80,7 +81,6 @@ def launch(args):
             val_generator=val_generator,
             learning_params=learning_params,
             save_dir=save_dir,
-            error_plotter=error_plotter,
             device=args.device
         )
 
@@ -98,13 +98,14 @@ def launch(args):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        train_dirs=['train_data'],
-        val_dirs=['val_data'],
-        models=['simple_cnn'],
-        model_version=[''],
+        robot='franka',
+        sensor='tactip_1',
+        tasks=['surface_3d'],
+        task_version=['shear'],
+        train_dirs=['train'],
+        val_dirs=['val'],
+        models=['simple_cnn_mdn'],
+        model_version=['temp'],
         device='cuda'
     )
 

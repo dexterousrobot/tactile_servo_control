@@ -4,9 +4,10 @@ import argparse
 def parse_args(
         robot='sim',
         sensor='tactip',
-        tasks=['edge_2d'],
+        tasks=['surface_3d'],
         data_dirs=['train', 'val'],
         sample_nums=[400, 100],
+        task_version=[],
         train_dirs=['train'],
         val_dirs=['val'],
         models=['simple_cnn'],
@@ -82,6 +83,12 @@ def parse_args(
         type=str,
         help="Choose version.",
         default=run_version
+    )
+    parser.add_argument(
+        '-tv', '--task_version',
+        nargs='+',
+        help="Choose version from ['', 'pose', 'shear].",
+        default=task_version
     )
     parser.add_argument(
         '-d', '--device',

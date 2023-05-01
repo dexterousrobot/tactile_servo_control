@@ -3,7 +3,7 @@ python launch_collect_data.py -r sim -s tactip -t edge_2d
 """
 import os
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH
+from tactile_data_shear.tactile_servo_control import BASE_DATA_PATH
 from tactile_data.collect_data.collect_data import collect_data
 from tactile_data.collect_data.process_image_data import process_image_data, partition_data
 from tactile_data.collect_data.setup_targets import setup_targets
@@ -71,19 +71,18 @@ def process_images(args, image_params, split=None):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        data_dirs=['data'],
-        sample_nums=[5000]
+        robot='franka',
+        sensor='tactip_1',
+        tasks=['surface_3d'],
+        data_dirs=['train', 'val', 'test'],
+        # sample_nums=[5000] 
     )
 
     image_params = {
-        # "thresh": [61, 5],
-        # "circle_mask_radius": 210, # 140 ABB tactip # 210 CR midi
-        # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
-        "bbox": (12, 12, 240, 240)
+        "thresh": [61, 5],
+        "circle_mask_radius": 230, # 210 CR midi  # 230 Franka tactip
+        "bbox": (105, 20, 550, 460)  # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # Franka tactip  (120, 30, 540, 450)
     }
 
-    launch(args)
+    # launch(args)
     process_images(args, image_params, split=0.8)

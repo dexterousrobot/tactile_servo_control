@@ -1,5 +1,5 @@
 """
-python evaluate_model.py -r abb -m simple_cnn -t edge_2d
+python evaluate_model.py -r sim -m simple_cnn -t surface_3d
 """
 import os
 import itertools as it
@@ -7,7 +7,7 @@ import pandas as pd
 from torch.autograd import Variable
 import torch
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
+from tactile_data_shear.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import load_json_obj
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.image_generator import ImageDataGenerator
@@ -36,7 +36,8 @@ def evaluate_model(
 
     # complete dateframe of predictions and targets
     target_label_names = list(filter(None, label_encoder.target_label_names))
-    pred_df = pd.DataFrame(columns=target_label_names)
+    pred_means_df = pd.DataFrame(columns=target_label_names)
+    pred_stdev_df = pd.DataFrame(columns=target_label_names)
     targ_df = pd.DataFrame(columns=target_label_names)
 
     for _, batch in enumerate(loader):
@@ -48,23 +49,31 @@ def evaluate_model(
         inputs = Variable(inputs).float().to(device)
 
         # forward pass
-        outputs = model(inputs)
+        try:
+            pred_means, pred_stdev = model.sample(inputs)
+        except: # compatibility without MDN
+            pred_means = model(inputs)
+            pred_stdev = pred_means*0
 
         # count correct for accuracy metric
-        pred_dict = label_encoder.decode_label(outputs)
+        pred_means_dict = label_encoder.decode_label(pred_means)
+        pred_stdev_dict = label_encoder.decode_label(pred_stdev)
 
         # append predictions and labels to dataframes
-        batch_pred_df = pd.DataFrame.from_dict(pred_dict)
+        batch_pred_means_df = pd.DataFrame.from_dict(pred_means_dict)
+        batch_pred_stdev_df = pd.DataFrame.from_dict(pred_stdev_dict)
         batch_targ_df = pd.DataFrame.from_dict(targ_dict)
-        pred_df = pd.concat([pred_df, batch_pred_df])
+        pred_means_df = pd.concat([pred_means_df, batch_pred_means_df])
+        pred_stdev_df = pd.concat([pred_stdev_df, batch_pred_stdev_df])
         targ_df = pd.concat([targ_df, batch_targ_df])
 
     # reset indices to be 0 -> test set size
-    pred_df = pred_df.reset_index(drop=True).fillna(0.0)
+    pred_means_df = pred_means_df.reset_index(drop=True).fillna(0.0)
+    pred_stdev_df = pred_stdev_df.reset_index(drop=True).fillna(0.0)
     targ_df = targ_df.reset_index(drop=True).fillna(0.0)
 
     print("Metrics")
-    metrics = label_encoder.calc_metrics(pred_df, targ_df)
+    metrics = label_encoder.calc_metrics(pred_means_df, targ_df)
     err_df, acc_df = metrics['err'], metrics['acc']
     print("evaluated_acc:")
     print(acc_df[[*target_label_names, 'overall_acc']].mean())
@@ -72,9 +81,9 @@ def evaluate_model(
     print(err_df[target_label_names].mean())
 
     # plot full error graph
-    error_plotter.name = 'error_plot_best'
+    metrics['err'] = pred_stdev_df # plot stdev not error
     error_plotter.final_plot(
-        pred_df, targ_df, metrics
+        pred_means_df, targ_df, metrics
     )
 
 
@@ -86,13 +95,14 @@ def evaluation(args):
     for args.task, args.model in it.product(args.tasks, args.models):
 
         model_dir_name = '_'.join(filter(None, [args.model, *args.model_version]))
+        task_name = '_'.join(filter(None, [args.task, *args.task_version]))
 
         val_data_dirs = [
             os.path.join(BASE_DATA_PATH, output_dir, args.task, dir) for dir in args.val_dirs
         ]
 
         # set model dir
-        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        model_dir = os.path.join(BASE_MODEL_PATH, output_dir, task_name, model_dir_name)
 
         # setup parameters
         learning_params = load_json_obj(os.path.join(model_dir, 'learning_params'))
@@ -135,12 +145,13 @@ def evaluation(args):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim',
-        sensor='tactip',
-        tasks=['edge_2d'],
-        val_dirs=['val_data'],
-        models=['simple_cnn'],
-        # model_version=[''],
+        robot='franka',
+        sensor='tactip_1',
+        tasks=['surface_3d'],
+        task_version=['shear'],
+        val_dirs=['val'],
+        models=['simple_cnn_mdn'],
+        model_version=['temp'],
         device='cuda'
     )
 

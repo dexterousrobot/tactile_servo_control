@@ -3,11 +3,11 @@ import shutil
 import numpy as np
 
 from tactile_data.utils import load_json_obj, save_json_obj
-from tactile_data.collect_data.setup_targets import POSE_LABEL_NAMES
+from tactile_data.collect_data.setup_targets import POSE_LABEL_NAMES, SHEAR_LABEL_NAMES
 
 
 def csv_row_to_label(row):
-    row_dict = {label: np.array(row[label]) for label in POSE_LABEL_NAMES}
+    row_dict = {label: np.array(row[label]) for label in [*POSE_LABEL_NAMES, *SHEAR_LABEL_NAMES]}
     return row_dict
 
 
@@ -15,9 +15,9 @@ def setup_learning(save_dir=None):
 
     learning_params = {
         'seed': 42,
-        'batch_size': 64,
+        'batch_size': 16,
         'epochs': 10,
-        'lr': 1e-4,
+        'lr': 1e-5,
         'lr_factor': 0.5,
         'lr_patience': 10,
         'adam_decay': 1e-6,
@@ -65,19 +65,25 @@ def setup_model_image(save_dir=None):
 
 def setup_model(model_type, save_dir=None):
 
-    model_params = {
-        'model_type': model_type
-    }
-
-    if model_type == 'fcn':
-        model_params['model_kwargs'] = {
-            'fc_layers': [2048, 1024, 512, 256, 128],
-            'activation': 'elu',
-            'dropout': 0.0,
-            'apply_batchnorm': True,
+    if model_type[-4:] == '_mdn':
+        model_params = {
+            'model_type': model_type[:-4],
+            'mdn_kwargs': {
+                'n_mdn_components': 1,
+                'model_out_dim': 128,
+                'hidden_dims': [256, 256],
+                'activation': 'relu',
+                'noise_type': 'diagonal',
+                'fixed_noise_level': None
+            }
         }
 
-    elif model_type == 'simple_cnn':
+    else:
+        model_params = {
+            'model_type': model_type
+        }
+
+    if model_params['model_type'] == 'simple_cnn':
         model_params['model_kwargs'] = {
             'conv_layers': [32, 32, 32, 32],
             'conv_kernel_sizes': [11, 9, 7, 5],
@@ -134,33 +140,30 @@ def setup_model_labels(task_name, data_dirs, save_dir=None):
     """
 
     target_label_names_dict = {
-        'surface_3d': ['pose_z', 'pose_Rx', 'pose_Ry'],
-        'edge_2d':    ['pose_x', 'pose_Rz'],
-        'edge_3d':    ['pose_x', 'pose_z', 'pose_Rz'],
-        'edge_5d':    ['pose_x', 'pose_z', 'pose_Rx', 'pose_Ry', 'pose_Rz'],
+        'surface_3d':      ['pose_z', 'pose_Rx', 'pose_Ry', 'shear_x', 'shear_y', 'shear_Rz'],
+        'surface_3d_pose': ['pose_z', 'pose_Rx', 'pose_Ry'],
+        'surface_3d_shear': ['shear_x', 'shear_y', 'shear_Rz'],
     }
 
     target_weights_dict = {
-        'surface_3d': [1, 1, 1],
-        'edge_2d':    [1, 1],
-        'edge_3d':    [1, 1, 1],
-        'edge_5d':    [1, 1, 1, 1, 1],
+        'surface_3d':      [1, 1, 1, 2, 2, 4],
+        'surface_3d_pose': [1, 1, 1],
+        'surface_3d_shear': [1, 1, 2],
     }
 
     # get data limits from training data
     llims, ulims = [], []
     for data_dir in data_dirs:
         collect_params = load_json_obj(os.path.join(data_dir, 'collect_params'))
-        llims.append(collect_params['pose_llims'])
-        ulims.append(collect_params['pose_ulims'])
+        llims.append([*collect_params['pose_llims'], *collect_params['shear_llims']])
+        ulims.append([*collect_params['pose_ulims'], *collect_params['shear_ulims']])
 
     model_label_params = {
         'target_label_names': target_label_names_dict[task_name],
         'target_weights': target_weights_dict[task_name],
-        'label_names': POSE_LABEL_NAMES,
+        'label_names': [*POSE_LABEL_NAMES, *SHEAR_LABEL_NAMES],
         'llims': tuple(np.min(llims, axis=0).astype(float)),
         'ulims': tuple(np.max(ulims, axis=0).astype(float)),
-        'periodic_label_names': ['pose_Rz']
     }
 
     # save parameters
