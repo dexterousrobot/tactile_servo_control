@@ -50,7 +50,7 @@ def evaluate_model(
 
         # forward pass
         try:
-            pred_means, pred_stdev = model.sample(inputs)
+            pred_means, pred_stdev = model.predict(inputs)
         except: # compatibility without MDN
             pred_means = model(inputs)
             pred_stdev = pred_means*0
@@ -145,13 +145,14 @@ def evaluation(args):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='franka',
-        sensor='tactip_1',
+        robot='cr',
+        sensor='tactip',
         tasks=['surface_3d'],
-        task_version=['shear'],
-        val_dirs=['val'],
-        models=['simple_cnn_mdn'],
-        model_version=['temp'],
+        task_version=[''],
+        train_dirs=['train_data'],
+        val_dirs=['val_data'],
+        models=['cnn_mdn_jl'],
+        # model_version=['temp'],
         device='cuda'
     )
 

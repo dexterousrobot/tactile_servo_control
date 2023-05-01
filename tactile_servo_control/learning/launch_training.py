@@ -98,13 +98,13 @@ def launch(args):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='franka',
-        sensor='tactip_1',
+        robot='cr',
+        sensor='tactip',
         tasks=['surface_3d'],
-        task_version=['shear'],
-        train_dirs=['train'],
-        val_dirs=['val'],
-        models=['simple_cnn_mdn'],
+        task_version=[''],
+        train_dirs=['train_data'],
+        val_dirs=['val_data'],
+        models=['cnn_mdn_jl'],
         model_version=['temp'],
         device='cuda'
     )
