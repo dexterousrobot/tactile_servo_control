@@ -73,9 +73,9 @@ if __name__ == "__main__":
     args = parse_args(
         robot='sim',
         sensor='tactip',
-        tasks=['edge_2d'],
-        data_dirs=['data'],
-        sample_nums=[5000]
+        tasks=['surface_3d'],
+        data_dirs=['data_exp_shear'],
+        sample_nums=[100]
     )
 
     image_params = {

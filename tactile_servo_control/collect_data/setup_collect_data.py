@@ -48,7 +48,8 @@ def setup_collect_params(robot, task, save_dir=None):
     shear_lims_dict = {
         'cr':      [(-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5)],
         'mg400':   [(-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5)],
-        'sim':     [(0, 0, 0, 0, 0, 0),    (0, 0, 0, 0, 0, 0)],
+        # 'sim':     [(0, 0, 0, 0, 0, 0),    (0, 0, 0, 0, 0, 0)],
+        'sim':     [(-5, -5, 0, 0, 0, -5), (5, 5, 0, 0, 0, 5)],
     }
 
     object_poses_dict = {
@@ -104,7 +105,8 @@ def setup_env_params(robot, save_dir=None):
     }
 
     if 'sim' in robot:
-        env_params['speed'] = float('inf')
+        # env_params['speed'] = float('inf')
+        env_params['speed'] = 50
         env_params['stim_pose'] = (600, 0, 12.5, 0, 0, 0)
 
     if save_dir:

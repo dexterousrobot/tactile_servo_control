@@ -68,7 +68,7 @@ def setup_pybullet_env(
 
     tactile_sensor_params = {
         "type": sensor_type,
-        "core": "no_core",
+        "core": "exp_shear",
         "dynamics": {},  # {'stiffness': 50, 'damping': 100, 'friction': 10.0},
         "image_size": image_size,
         "turn_off_border": False,
@@ -107,8 +107,7 @@ if __name__ == '__main__':
 
     env_params = {
         'robot': 'sim',
-        # 'stim_name': 'square',
-        'stim_name': 'static_keyboard',
+        'stim_name': 'square',
         'speed': 50,
         'work_frame': (600, 0, 200, 0, 0, 0),
         'tcp_pose': (600, 0, 0, 0, 0, 0),
