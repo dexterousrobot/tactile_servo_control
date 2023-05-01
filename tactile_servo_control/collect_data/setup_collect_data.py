@@ -53,8 +53,10 @@ def setup_collect_params(robot, task, save_dir=None):
     }
 
     object_poses_dict = {
-        "surface": (-50, 0, 0, 0, 0, 0),
-        "edge":    (0, 0, 0, 0, 0, 0),
+        'surface_3d': {'surface': (-50, 0, 0, 0, 0, 0)},
+        'edge_2d':    {'edge': (0, 0, 0, 0, 0, 0)},
+        'edge_3d':    {'edge': (0, 0, 0, 0, 0, 0)},
+        'edge_5d':    {'edge': (0, 0, 0, 0, 0, 0)},
     }
 
     collect_params = {
@@ -62,7 +64,7 @@ def setup_collect_params(robot, task, save_dir=None):
         'pose_ulims': pose_lims_dict[task][1],
         'shear_llims': shear_lims_dict[robot][0],
         'shear_ulims': shear_lims_dict[robot][1],
-        'object_poses': {task[:-3]: object_poses_dict[task[:-3]]},
+        'object_poses': object_poses_dict[task],
         'sample_disk': True,
         'sort': False,
         'seed': 0
