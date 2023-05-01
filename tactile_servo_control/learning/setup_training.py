@@ -88,42 +88,35 @@ def setup_model(model_type, save_dir=None):
         }
 
     elif model_type == 'posenet_cnn':
-        model_params = {
-            'model_kwargs': {
-                'conv_layers': [256, 256, 256, 256, 256],
-                'conv_kernel_sizes': [3, 3, 3, 3, 3],
-                'fc_layers': [64],
-                'activation': 'elu',
-                'dropout': 0.0,
-                'apply_batchnorm': True,
-            }
+        model_params['model_kwargs'] = {
+            'conv_layers': [256, 256, 256, 256, 256],
+            'conv_kernel_sizes': [3, 3, 3, 3, 3],
+            'fc_layers': [64],
+            'activation': 'elu',
+            'dropout': 0.0,
+            'apply_batchnorm': True,
         }
 
     elif model_type == 'nature_cnn':
-        model_params = {
-            'model_kwargs': {
-                'fc_layers': [512, 512],
-                'dropout': 0.0,
-            }
+        model_params['model_kwargs'] = {
+            'fc_layers': [512, 512],
+            'dropout': 0.0,
         }
 
+
     elif model_type == 'resnet':
-        model_params = {
-            'model_kwargs': {
-                'layers': [2, 2, 2, 2]
-            }
+        model_params['model_kwargs'] = {
+            'layers': [2, 2, 2, 2]
         }
 
     elif model_type == 'vit':
-        model_params = {
-            'model_kwargs': {
-                'patch_size': 32,
-                'dim': 128,
-                'depth': 6,
-                'heads': 8,
-                'mlp_dim': 512,
-                'pool': 'mean',  # for regression
-            }
+        model_params['model_kwargs'] = {
+            'patch_size': 32,
+            'dim': 128,
+            'depth': 6,
+            'heads': 8,
+            'mlp_dim': 512,
+            'pool': 'mean',  # for regression
         }
 
     else:
@@ -194,16 +187,3 @@ def setup_training(model_type, task, data_dirs, save_dir=None):
             shutil.copy(os.path.join(data_dirs[0], 'sensor_image_params.json'), save_dir)
 
     return learning_params, model_params, model_label_params, model_image_params
-
-
-def setup_training_markers(model_type, task, data_dirs, save_dir=None):
-    learning_params = setup_learning(save_dir)
-    model_image_params = setup_model(model_type, save_dir)
-    model_label_params = setup_model_labels(task, data_dirs, save_dir)
-
-    # retain data parameters
-    if save_dir:
-        shutil.copy(os.path.join(data_dirs[0], 'env_params.json'), save_dir)
-        shutil.copy(os.path.join(data_dirs[0], 'processed_marker_params.json'), save_dir)
-
-    return learning_params, model_image_params, model_label_params, {}
