@@ -1,5 +1,5 @@
 """
-python launch_training.py -r sim -s tactip -m simple_cnn -t edge_2d
+python launch_training.py -r cr -s tactip -m simple_cnn -t surface_3d -dv data -tv shear
 """
 import os
 import itertools as it
@@ -8,7 +8,8 @@ from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
 from tactile_data.utils import make_dir
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
-from tactile_learning.supervised.train_mdn_model import train_mdn_model
+from tactile_learning.supervised.train_mdn_jl_model import train_mdn_jl_model
+from tactile_learning.supervised.train_mdn_ac_model import train_mdn_ac_model
 from tactile_learning.utils.utils_learning import seed_everything
 from tactile_learning.utils.utils_plots import RegressionPlotter
 
@@ -25,6 +26,9 @@ def launch(args):
     for args.task, args.model in it.product(args.tasks, args.models):
 
         model_dir_name = '_'.join(filter(None, [args.model, *args.model_version]))
+        init_model_dir_name = '_'.join(filter(None, [*args.init_model, *args.init_model_version])) \
+            if args.init_model and args.init_model_version else None
+        task_name = '_'.join(filter(None, [args.task, *args.task_version]))
 
         # data dirs - list of directories combined in generator
         train_data_dirs = [
@@ -35,13 +39,17 @@ def launch(args):
         ]
 
         # setup save dir
-        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, args.task, model_dir_name)
+        save_dir = os.path.join(BASE_MODEL_PATH, output_dir, task_name, model_dir_name)
         make_dir(save_dir)
+
+        # specify init model dir
+        init_dir = os.path.join(BASE_MODEL_PATH, output_dir, task_name, init_model_dir_name) \
+            if init_model_dir_name else None
 
         # setup parameters
         learning_params, model_params, label_params, image_params = setup_training(
             args.model,
-            args.task,
+            task_name,
             train_data_dirs,
             save_dir
         )
@@ -60,7 +68,7 @@ def launch(args):
 
         # create the label encoder/decoder and plotter
         label_encoder = LabelEncoder(label_params, args.device)
-        error_plotter = RegressionPlotter(label_params, save_dir, final_only=False)
+        error_plotter = RegressionPlotter(label_params, save_dir)
 
         # create the model
         seed_everything(learning_params['seed'])
@@ -69,19 +77,32 @@ def launch(args):
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
+            saved_model_dir=init_dir,
             device=args.device
         )
 
-        train_mdn_model(
-            prediction_mode='regression',
-            model=model,
-            label_encoder=label_encoder,
-            train_generator=train_generator,
-            val_generator=val_generator,
-            learning_params=learning_params,
-            save_dir=save_dir,
-            device=args.device
-        )
+        if 'mdn_jl' in args.model:
+            train_mdn_jl_model(
+                prediction_mode='regression',
+                model=model,
+                label_encoder=label_encoder,
+                train_generator=train_generator,
+                val_generator=val_generator,
+                learning_params=learning_params,
+                save_dir=save_dir,
+                device=args.device
+            )
+        elif 'mdn_ac' in args.model:
+            train_mdn_ac_model(
+                prediction_mode='regression',
+                model=model,
+                label_encoder=label_encoder,
+                train_generator=train_generator,
+                val_generator=val_generator,
+                learning_params=learning_params,
+                save_dir=save_dir,
+                device=args.device
+            )
 
         # perform a final evaluation using the last model
         evaluate_model(
@@ -97,13 +118,15 @@ def launch(args):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='sim',
+        robot='cr',
         sensor='tactip',
-        tasks=['edge_2d'],
+        tasks=['surface_3d'],
+        task_version=[''],
         train_dirs=['train_data'],
         val_dirs=['val_data'],
-        models=['simple_cnn'],
-        model_version=[''],
+        models=['simple_cnn_mdn_ac'],
+        # models=['simple_cnn_mdn_jl'],
+        model_version=['temp'],
         device='cuda'
     )
 
