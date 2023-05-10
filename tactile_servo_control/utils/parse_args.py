@@ -4,13 +4,16 @@ import argparse
 def parse_args(
         robot='sim',
         sensor='tactip',
-        tasks=['edge_2d'],
+        tasks=['surface_3d'],
         data_dirs=['train', 'val'],
         sample_nums=[400, 100],
+        task_version=[],
         train_dirs=['train'],
         val_dirs=['val'],
         models=['simple_cnn'],
         model_version=[],
+        init_model=[],
+        init_model_version=[],
         objects=['circle'],
         run_version=[],
         device='cuda'
@@ -72,6 +75,18 @@ def parse_args(
         default=model_version
     )
     parser.add_argument(
+        '-im', '--init_model',
+        nargs='+',
+        help="Choose model from ['simple_cnn', 'posenet_cnn', 'nature_cnn', 'resnet', 'vit']",
+        default=init_model
+    )
+    parser.add_argument(
+        '-iv', '--init_model_version',
+        type=str,
+        help="Choose initial model version.",
+        default=init_model_version
+    )
+    parser.add_argument(
         '-o', '--objects',
         nargs='+',
         help="Choose objects from ['circle', 'square', 'clover', 'foil', 'saddle', 'bowl']",
@@ -82,6 +97,12 @@ def parse_args(
         type=str,
         help="Choose version.",
         default=run_version
+    )
+    parser.add_argument(
+        '-tv', '--task_version',
+        nargs='+',
+        help="Choose version from ['', 'pose', 'shear].",
+        default=task_version
     )
     parser.add_argument(
         '-d', '--device',

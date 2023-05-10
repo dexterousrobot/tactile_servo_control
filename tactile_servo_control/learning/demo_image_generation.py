@@ -14,9 +14,9 @@ from tactile_servo_control.utils.parse_args import parse_args
 if __name__ == '__main__':
 
     args = parse_args(
-        robot='sim',
+        robot='cr',
         sensor='tactip',
-        tasks=['edge_2d'],
+        tasks=['surface_3d'],
         data_dirs=['train_data', 'val_data']
     )
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
         os.path.join(BASE_DATA_PATH, output_dir, *i) for i in it.product(args.tasks, args.data_dirs)
     ]
 
-    learning_params = setup_learning()
+    learning_params = setup_learning(model_type='simple_cnn')
     image_params = setup_model_image()
 
     demo_image_generation(
