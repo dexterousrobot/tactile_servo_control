@@ -81,7 +81,7 @@ def evaluate_model(
     print(err_df[target_label_names].mean())
 
     # plot full error graph
-    metrics['err'] = pred_stdev_df # plot stdev not error
+    metrics['stdev'] = pred_stdev_df
     error_plotter.final_plot(
         pred_means_df, targ_df, metrics
     )
@@ -145,13 +145,13 @@ def evaluation(args):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='cr',
-        sensor='tactip',
+        robot='franka',
+        sensor='tactip_1',
         tasks=['surface_3d'],
-        task_version=[''],
-        train_dirs=['train_data'],
-        val_dirs=['val_data'],
-        models=['cnn_mdn_jl'],
+        task_version=['shear'],
+        train_dirs=['train'],
+        val_dirs=['val'],
+        models=['simple_cnn_mdn_jl'],
         # model_version=['temp'],
         device='cuda'
     )

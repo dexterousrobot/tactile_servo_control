@@ -74,7 +74,6 @@ def launch(args):
         )
 
         train_model(
-            prediction_mode='regression',
             model=model,
             label_encoder=label_encoder,
             train_generator=train_generator,
@@ -101,11 +100,11 @@ if __name__ == "__main__":
         robot='franka',
         sensor='tactip_1',
         tasks=['surface_3d'],
-        task_version=[''],
+        task_version=['shear'],
         train_dirs=['train'],
         val_dirs=['val'],
         models=['simple_cnn_mdn_jl'],
-        model_version=['temp_2'],
+        # model_version=['temp'],
         device='cuda'
     )
 
