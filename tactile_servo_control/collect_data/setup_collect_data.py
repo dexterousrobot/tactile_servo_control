@@ -39,8 +39,7 @@ def setup_collect_params(robot, task, save_dir=None):
         robot = 'sim'
 
     pose_lims_dict = {
-        'shear_3d':   [ ( 0, 0, 1, -25, -25,    0), (0, 0, 5, 25, 25, 0) ],
-        'surface_3d': [ ( 0, 0, 1, -25, -25,    0), (0, 0, 5, 25, 25, 0) ],
+        'surface_3d': [(0, 0, 1, -25, -25, 0), (0, 0, 5, 25, 25, 0)],
     }
 
     shear_lims_dict = {
