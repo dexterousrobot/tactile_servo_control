@@ -62,6 +62,7 @@ def launch(args):
         # create the label encoder/decoder and plotter
         label_encoder = LabelEncoder(label_params, args.device)
         error_plotter = RegressionPlotter(label_params, save_dir)
+        saved_model_dir = os.path.join(BASE_MODEL_PATH, output_dir, task_name, args.saved_model) if args.saved_model else None
 
         # create the model
         seed_everything(learning_params['seed'])
@@ -70,6 +71,7 @@ def launch(args):
             in_channels=1,
             out_dim=label_encoder.out_dim,
             model_params=model_params,
+            saved_model_dir=saved_model_dir,
             device=args.device
         )
 
@@ -97,14 +99,15 @@ def launch(args):
 if __name__ == "__main__":
 
     args = parse_args(
-        robot='franka',
-        sensor='tactip_1',
+        robot='cr',
+        sensor='tactip',
         tasks=['surface_3d'],
-        task_version=['shear'],
-        train_dirs=['train'],
-        val_dirs=['val'],
+        # task_version=['shear'],
+        train_dirs=['train_data'],
+        val_dirs=['val_data'],
         models=['simple_cnn_mdn_jl'],
-        # model_version=['temp'],
+        model_version=['varysig'],
+        saved_model='simple_cnn_mdn_jl_unitsig',
         device='cuda'
     )
 

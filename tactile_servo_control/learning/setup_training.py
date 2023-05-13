@@ -121,9 +121,9 @@ def setup_model(model_type, save_dir=None):
         model_params['mdn_kwargs'] = {
             'model_out_dim': 128,
             "n_mdn_components": 1, 
-            # "pi_dropout": 0.1, 
             # "mu_dropout": [0.1, 0.1, 0.2, 0.0, 0.0, 0.1], 
             # "sigma_inv_dropout": [0.1, 0.1, 0.2, 0.0, 0.0, 0.1], 
+            # "sigma_inv_min": 1, "sigma_inv_max": 1 
         }
 
     if '_mdn_ac' in model_params['model_type']:

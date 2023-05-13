@@ -12,6 +12,7 @@ def parse_args(
         val_dirs=['val'],
         models=['simple_cnn'],
         model_version=[],
+        saved_model=None,
         objects=['circle'],
         run_version=[],
         device='cuda'
@@ -71,6 +72,12 @@ def parse_args(
         type=str,
         help="Choose version.",
         default=model_version
+    )
+    parser.add_argument(
+        '-sv', '--saved_model',
+        type=str,
+        help="Choose version.",
+        default=saved_model
     )
     parser.add_argument(
         '-o', '--objects',
