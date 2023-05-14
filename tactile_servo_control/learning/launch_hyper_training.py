@@ -11,7 +11,7 @@ from functools import partial
 from hyperopt import tpe, hp, fmin, Trials, STATUS_OK, STATUS_FAIL
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
-from tactile_data.utils import make_dir, save_json_obj
+from tactile_image_processing.utils import make_dir, save_json_obj
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.train_model import train_model

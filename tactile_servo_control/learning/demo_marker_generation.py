@@ -5,11 +5,12 @@ import os
 import itertools as it
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH
-from tactile_data.utils import load_json_obj
+from tactile_image_processing.utils import load_json_obj
 from tactile_learning.supervised.marker_generator import demo_marker_generation
 
 from tactile_servo_control.learning.setup_training import setup_learning, csv_row_to_label
 from tactile_servo_control.utils.parse_args import parse_args
+
 
 if __name__ == '__main__':
 
