@@ -2,8 +2,8 @@ import os
 import shutil
 import numpy as np
 
-from tactile_data.utils import load_json_obj, save_json_obj
-from tactile_data.collect_data.setup_targets import POSE_LABEL_NAMES, SHEAR_LABEL_NAMES
+from tactile_image_processing.utils import load_json_obj, save_json_obj
+from tactile_image_processing.collect_data.setup_targets import POSE_LABEL_NAMES, SHEAR_LABEL_NAMES
 
 
 def csv_row_to_label(row):

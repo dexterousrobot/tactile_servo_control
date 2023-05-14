@@ -1,6 +1,25 @@
 import os
 
-from tactile_data.utils import save_json_obj
+from tactile_image_processing.utils import save_json_obj
+
+BBOX = {
+    "franka_tactip_1": (105, 20, 550, 460),
+    "franks_tactip_2": (105, 20, 550, 460),
+    "cr_tactip":       (5, 10, 425, 430),
+    "sim_tactip":      (12, 12, 240, 240)
+}
+CIRCLE_MASK_RADIUS = {
+    "franka_tactip_1": 230,
+    "franks_tactip_2": 230,
+    "cr_tactip":       210,
+    "sim_tactip":      None
+}
+THRESH = {
+    "franka_tactip_1": [61, 5],
+    "franks_tactip_2": [61, 5],
+    "cr_tactip":       [61, 5],
+    "sim_tactip":      None
+}
 
 
 def setup_sensor_image_params(robot, sensor, save_dir=None):
