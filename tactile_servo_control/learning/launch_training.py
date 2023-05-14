@@ -5,7 +5,7 @@ import os
 import itertools as it
 
 from tactile_data.tactile_servo_control import BASE_DATA_PATH, BASE_MODEL_PATH
-from tactile_data.utils import make_dir
+from tactile_image_processing.utils import make_dir
 from tactile_learning.supervised.image_generator import ImageDataGenerator
 from tactile_learning.supervised.models import create_model
 from tactile_learning.supervised.train_model import train_model

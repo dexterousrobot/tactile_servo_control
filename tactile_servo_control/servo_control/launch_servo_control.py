@@ -8,7 +8,7 @@ import numpy as np
 
 from cri.transforms import inv_transform_euler
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
-from tactile_data.utils import load_json_obj, make_dir
+from tactile_image_processing.utils import load_json_obj, make_dir
 from tactile_learning.supervised.models import create_model
 from user_input.slider import Slider
 

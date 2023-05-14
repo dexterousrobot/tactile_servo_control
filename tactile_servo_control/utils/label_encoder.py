@@ -9,7 +9,7 @@ import pandas as pd
 import torch
 
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH
-from tactile_data.utils import load_json_obj
+from tactile_image_processing.utils import load_json_obj
 from tactile_learning.utils.utils_plots import LearningPlotter, RegressionPlotter
 
 from tactile_servo_control.utils.parse_args import parse_args

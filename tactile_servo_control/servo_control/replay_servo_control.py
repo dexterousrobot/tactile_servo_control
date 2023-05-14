@@ -5,7 +5,7 @@ import os
 import itertools as it
 
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
-from tactile_data.utils import load_json_obj
+from tactile_image_processing.utils import load_json_obj
 from tactile_learning.supervised.models import create_model
 
 from tactile_servo_control.utils.label_encoder import LabelEncoder

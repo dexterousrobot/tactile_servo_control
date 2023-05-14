@@ -1,6 +1,25 @@
 import os
 
-from tactile_data.utils import save_json_obj
+from tactile_image_processing.utils import save_json_obj
+
+BBOX = {
+    "abb_tactip":   (25, 25, 305, 305),
+    "cr_tactip":    (5, 10, 425, 430),
+    "mg400_tactip": (10, 10, 310, 310),
+    "sim_tactip":   (12, 12, 240, 240)
+}
+CIRCLE_MASK_RADIUS = {
+    "abb_tactip":   140,
+    "cr_tactip":    210,
+    "mg400_tactip": None,
+    "sim_tactip":   (12, 12, 240, 240)
+}
+THRESH = {
+    "abb_tactip":   [61, 5],
+    "cr_tactip":    [61, 5],
+    "mg400_tactip": [61, 5],
+    "sim_tactip":   None
+}
 
 
 def setup_sensor_image_params(robot, sensor, save_dir=None):

@@ -3,13 +3,14 @@ python launch_collect_data.py -r sim -s tactip -t edge_2d
 """
 import os
 
-from tactile_data.tactile_servo_control import BASE_DATA_PATH
-from tactile_data.collect_data.collect_data import collect_data
-from tactile_data.collect_data.process_image_data import process_image_data, partition_data
-from tactile_data.collect_data.setup_targets import setup_targets
-from tactile_data.utils import make_dir
+from tactile_data_shear.tactile_servo_control import BASE_DATA_PATH
+from tactile_image_processing.collect_data.collect_data import collect_data
+from tactile_image_processing.collect_data.setup_targets import setup_targets
+from tactile_image_processing.process_data.process_image_data import process_image_data, partition_data
+from tactile_image_processing.utils import make_dir
 
 from tactile_servo_control.collect_data.setup_collect_data import setup_collect_data
+from tactile_servo_control.collect_data.setup_collect_data import BBOX, CIRCLE_MASK_RADIUS, THRESH
 from tactile_servo_control.utils.parse_args import parse_args
 from tactile_servo_control.utils.setup_embodiment import setup_embodiment
 
@@ -77,13 +78,12 @@ if __name__ == "__main__":
         data_dirs=['data'],
         sample_nums=[5000]
     )
-
-    image_params = {
-        # "thresh": [61, 5],
-        # "circle_mask_radius": 210, # 140 ABB tactip # 210 CR midi
-        # sim (12, 12, 240, 240) # CR midi (5, 10, 425, 430) # MG400 mini (10, 10, 310, 310) # ABB tactip (25, 25, 305, 305)
-        "bbox": (12, 12, 240, 240)
-    }
-
     launch(args)
+
+    embodiment = '_'.join([args.robot, args.sensor])
+    image_params = {
+        "bbox": BBOX[embodiment],
+        "circle_mask_radius": CIRCLE_MASK_RADIUS[embodiment],
+        "thresh": THRESH[embodiment],
+    }
     process_images(args, image_params, split=0.8)
