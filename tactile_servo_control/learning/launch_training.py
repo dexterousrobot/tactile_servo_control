@@ -105,7 +105,7 @@ if __name__ == "__main__":
         val_dirs=['val_data'],
         models=['simple_cnn'],
         model_version=[''],
-        device='cuda'
+        device='cpu'
     )
 
     launch(args)

@@ -237,7 +237,7 @@ if __name__ == "__main__":
         val_dirs=['val_data'],
         models=['simple_cnn'],
         model_version=['hyp_temp'],
-        device='cuda'
+        device='cpu'
     )
 
     space = {
