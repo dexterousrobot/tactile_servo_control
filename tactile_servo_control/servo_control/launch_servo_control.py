@@ -6,6 +6,7 @@ import itertools as it
 import time as t
 import numpy as np
 
+# from tactile_sim.utils.transforms import inv_transform_eul
 from cri.transforms import inv_transform_euler
 from tactile_data.tactile_servo_control import BASE_MODEL_PATH, BASE_RUNS_PATH
 from tactile_image_processing.utils import load_json_obj, make_dir
@@ -65,7 +66,7 @@ def servo_control(
         servo = controller.update(pred_pose)
 
         # new pose applies servo in end effector frame
-        pose = inv_transform_euler(servo, robot.pose)
+        pose = inv_transform_eul(servo, robot.pose)
         robot.move_linear(pose)
 
         # optional peripheral: plot trajectory, reference slider
