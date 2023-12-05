@@ -30,7 +30,7 @@ There are four main tasks sharing the same underlying data collection, learning 
 
 ### Installation ###
 
-This work relies on the [Tactile Sim](https://github.com/dexterousrobot/tactile_sim), [Tactile Learning](https://github.com/dexterousrobot/tactile_learning) and [Tactile Data](https://github.com/dexterousrobot/tactile_data) reposotories. Please follow installation instructions within these repos first.
+This work relies on the [Tactile Sim](https://github.com/dexterousrobot/tactile_sim), [Tactile Learning](https://github.com/dexterousrobot/tactile_learning), [Tactile Data](https://github.com/dexterousrobot/tactile_data), [Common Robot Interface](https://github.com/dexterousrobot/common_robot_interface), [User Input](https://github.com/dexterousrobot/user_input) and [Tactile Image Processing](https://github.com/dexterousrobot/tactile_image_processing) reposotories. Please follow installation instructions within these repos first.
 
 Install Tactile-Gym Servo Control
 
@@ -111,7 +111,7 @@ Demonstration files are provided for all tasks in the example directory. These u
 To demonstrate servo control, from the base directory run
 
 ```
-python servo_control/servo_control.py -t task_name -d device_name
+python servo_control/launch_servo_control.py -t task_name -d device_name
 ```
 The task can be selected by adjusting the code.
 
